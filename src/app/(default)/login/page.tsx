@@ -11,30 +11,60 @@ import {
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 
-import { useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
+import { signIn } from "@/lib/config/firebase-config"
+import { toast } from "sonner"
+import { useRouter } from "next/navigation"
 
 const formSchema = z.object({
-    username: z.string().min(2).max(50),
+    email: z.string().min(1, { message: "Email is required" }).email({ message: "Invalid email address" }),
     password: z.string().min(8).max(50),
 })
 
 export default function LoginPage() {
+    const router = useRouter()
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            username: "",
+            email: "",
             password: "",
         },
     })
 
     function onSubmit(values: z.infer<typeof formSchema>) {
-        // Do something with the form values.
-        // ✅ This will be type-safe and validated.
-        console.log(values)
+        const promise = signIn(values.email, values.password)
+            .then((userCredential) => {
+                // Login successful
+                toast.success("Login successful!");
+                router.push("/dashboard");
+            })
+            .catch((error) => {
+                switch (error.code) {
+                    case 'auth/user-not-found':
+                        toast.error('No user found with this email.')
+                        break;
+                    case 'auth/wrong-password':
+                        toast.error('Incorrect password. Please try again.')
+                        break;
+                    case 'auth/invalid-email':
+                        toast.error('Invalid email address format.')
+                        break;
+                    case 'auth/too-many-requests':
+                        toast.error('Too many requests. Please try again later.')
+                        break;
+                    default:
+                        toast.error("Sign-in error: " + error.message);
+                }
+            });
+
+        toast.promise(promise, {
+            loading: 'Logging in...',
+            success: null,
+            error: null,
+        });
     }
 
     return (
@@ -43,14 +73,14 @@ export default function LoginPage() {
                 <form onSubmit={form.handleSubmit(onSubmit)} className="w-full max-w-md md:w-1/3 lg:w-1/3 mx-auto mt-10">
                     <FormField
                         control={form.control}
-                        name="username"
+                        name="email"
                         render={({ field }) => (
                             <FormItem className="mb-4">
                                 <FormLabel>Username</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="Enter your username" {...field} />
+                                    <Input placeholder="Enter your email" {...field} />
                                 </FormControl>
-                                <FormDescription>Enter your username you've got in your email.</FormDescription>
+                                <FormDescription>Enter your email.</FormDescription>
                                 <FormMessage />
                             </FormItem>
                         )}

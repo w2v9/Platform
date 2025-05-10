@@ -4,6 +4,8 @@ import { Noto_Sans_Arabic } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
+import { Toaster } from "@/components/ui/sonner";
+import { AuthProvider } from "@/lib/context/authContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -43,11 +45,15 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${notoSansArabic.variable} ${notoSansArabicBold.variable} antialiased`}
       >
-        <main className="flex flex-col min-h-screen justify-center" >
-          <Navbar />
-          {children}
-          <Footer />
-        </main>
+        <AuthProvider>
+
+          <main className="flex flex-col min-h-screen justify-center" >
+            <Navbar />
+            {children}
+            <Footer />
+          </main>
+          <Toaster />
+        </AuthProvider>
       </body>
     </html>
   );

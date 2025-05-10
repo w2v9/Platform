@@ -14,6 +14,7 @@ export const quizData: Quiz = {
             id: "1",
             question: "What is the capital of France?",
             questionType: "multiple-choice",
+            explanation: "Paris is the capital and most populous city of France.",
             options: [
                 { id: "1", option: "Berlin", isCorrect: false },
                 { id: "2", option: "Madrid", isCorrect: false },
@@ -25,6 +26,7 @@ export const quizData: Quiz = {
         {
             id: "2",
             question: "What is 2 + 2?",
+            explanation: "2 + 2 equals 4.",
             questionType: "single-choice",
             options: [
                 { id: "1", option: "3", isCorrect: false },
@@ -36,6 +38,7 @@ export const quizData: Quiz = {
         {
             id: "3",
             question: "What is the largest planet in our solar system?",
+            explanation: "Jupiter is the largest planet in our solar system.",
             questionType: "multiple-choice",
             options: [
                 { id: "1", option: "Earth", isCorrect: false },
@@ -48,6 +51,7 @@ export const quizData: Quiz = {
         {
             id: "4",
             question: "What is the chemical symbol for gold?",
+            explanation: "The chemical symbol for gold is Au.",
             questionType: "multiple-choice",
             options: [
                 { id: "1", option: "Au", isCorrect: true },

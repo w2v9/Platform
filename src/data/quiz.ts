@@ -10,6 +10,7 @@ export type Quiz = {
 export type Question = {
     id: string
     question: string
+    explanation: string
     questionImage?: string
     questionAudio?: string
     questionVideo?: string
