@@ -2,6 +2,9 @@ import React from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Noto_Sans_Arabic } from "next/font/google";
 import "../globals.css";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/app-sidebar";
+import { AuthProvider } from "@/lib/context/authContext";
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -26,9 +29,14 @@ export default function QuizLayout({
     return (
         <html lang="en">
             <body className={`${geistSans.variable} ${geistMono.variable} ${notoSansArabic.variable} antialiased`}>
-                <main className="flex-grow container mx-auto p-4">
-                    {children}
-                </main>
+                <AuthProvider>
+                    <SidebarProvider>
+                        <AppSidebar />
+                        <main className="w-full flex-1 overflow-hidden bg-background">
+                            {children}
+                        </main>
+                    </SidebarProvider>
+                </AuthProvider>
             </body>
         </html>
     );

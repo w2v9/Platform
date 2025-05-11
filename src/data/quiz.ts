@@ -16,7 +16,7 @@ export type Question = {
     questionVideo?: string
     questionType?: string
     options: Option[]
-    answer: Option[]
+    answer: Option
 }
 
 export type Option = {
