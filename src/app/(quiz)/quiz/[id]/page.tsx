@@ -1,75 +1,88 @@
+'use client';
 import QuizUI from "@/components/Quiz";
-
 import { Quiz } from "@/data/quiz";
+import { useEffect, useState, use } from "react";
+import { getQuizById } from "@/lib/db_quiz";
+import { toast } from "sonner";
+import { Loader } from "lucide-react";
 
+export default function QuizPage({ params }: { params: Promise<{ id: string }> }) {
+    const unwrappedParams = use(params);
+    const quizId = unwrappedParams.id;
+    const [quizData, setQuizData] = useState<Quiz>();
 
-export const quizData: Quiz = {
-    id: "1",
-    title: "Sample Quiz",
-    description: "This is a sample quiz.",
-    timeLimit: 1.5,
-    createdAt: "2023-10-01",
-    questions: [
-        {
-            id: "1",
-            question: "What is the capital of France?",
-            questionType: "multiple-choice",
-            explanation: "Paris is the capital and most populous city of France.",
-            options: [
-                { id: "1", option: "Berlin", isCorrect: false },
-                { id: "2", option: "Madrid", isCorrect: false },
-                { id: "3", option: "Paris", isCorrect: true },
-                { id: "4", option: "Rome", isCorrect: false },
-            ],
-            answer: [{ id: "2", option: "Madrid", isCorrect: false }],
-        },
-        {
-            id: "2",
-            question: "What is 2 + 2?",
-            explanation: "2 + 2 equals 4.",
-            questionType: "single-choice",
-            options: [
-                { id: "1", option: "3", isCorrect: false },
-                { id: "2", option: "4", isCorrect: true },
-                { id: "3", option: "5", isCorrect: false },
-            ],
-            answer: [{ id: "1", option: "3", isCorrect: false }],
-        },
-        {
-            id: "3",
-            question: "What is the largest planet in our solar system?",
-            explanation: "Jupiter is the largest planet in our solar system.",
-            questionType: "multiple-choice",
-            options: [
-                { id: "1", option: "Earth", isCorrect: false },
-                { id: "2", option: "Mars", isCorrect: false },
-                { id: "3", option: "Jupiter", isCorrect: true },
-                { id: "4", option: "Saturn", isCorrect: false },
-            ],
-            answer: [{ id: "3", option: "Jupiter", isCorrect: true }],
-        },
-        {
-            id: "4",
-            question: "What is the chemical symbol for gold?",
-            explanation: "The chemical symbol for gold is Au.",
-            questionType: "multiple-choice",
-            options: [
-                { id: "1", option: "Au", isCorrect: true },
-                { id: "2", option: "Ag", isCorrect: false },
-                { id: "3", option: "Fe", isCorrect: false },
-                { id: "4", option: "Pb", isCorrect: false },
-            ],
-            answer: [{ id: "1", option: "Au", isCorrect: true }],
-        },
-    ],
+    useEffect(() => {
+        const fetchQuiz = async () => {
+            try {
+                const quiz = await getQuizById(quizId);
+                if (quiz) {
+                    setQuizData(quiz);
+                } else {
+                    toast.error("Quiz not found");
+                }
+            } catch (error) {
+                toast.error("Error fetching quiz");
+            }
+        };
 
-};
+        fetchQuiz();
 
+        const handleContextMenu = (e: MouseEvent) => {
+            e.preventDefault();
+            toast.error("Right-clicking is disabled during the quiz");
+            return false;
+        };
 
-export default function QuizPage({ params }: { params: { id: string } }) {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (
+                (e.ctrlKey && (e.key === 'c' || e.key === 'v' || e.key === 'p')) ||
+                e.key === 'F12' ||
+                (e.altKey && e.key === 'Tab')
+            ) {
+                e.preventDefault();
+                toast.error("Keyboard shortcuts are disabled during the quiz");
+                return false;
+            }
+        };
+
+        const handleSelectStart = (e: Event) => {
+            e.preventDefault();
+            return false;
+        };
+
+        document.addEventListener('contextmenu', handleContextMenu);
+        document.addEventListener('keydown', handleKeyDown);
+        document.addEventListener('selectstart', handleSelectStart);
+
+        return () => {
+            document.removeEventListener('contextmenu', handleContextMenu);
+            document.removeEventListener('keydown', handleKeyDown);
+            document.removeEventListener('selectstart', handleSelectStart);
+        };
+    }, [quizId]);
+
+    if (!quizData) {
+        return (
+            <div className="fixed inset-0 flex flex-col items-center justify-center">
+                <div className="flex flex-col items-center space-y-4 text-center">
+                    <Loader className="w-12 h-12 animate-spin text-blue-500" />
+                    <div className="text-lg">
+                        Loading your quiz...
+                        <br />
+                        Please be prepared, your quiz will start soon!
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
-        <div className="flex flex-col gap-4">
+        <div
+            className="flex flex-col gap-4 h-full items-center justify-center"
+            onCopy={(e) => e.preventDefault()}
+            onPaste={(e) => e.preventDefault()}
+            onCut={(e) => e.preventDefault()}
+        >
             <QuizUI quizData={quizData} />
         </div>
     );

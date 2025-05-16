@@ -17,6 +17,8 @@ const notoSansArabic = Noto_Sans_Arabic({
     variable: "--font-noto-sans-arabic",
     subsets: ["arabic"],
 });
+import { AuthProvider } from "@/lib/context/authContext";
+import { Toaster } from "@/components/ui/sonner";
 
 export default function QuizLayout({
     children,
@@ -27,7 +29,10 @@ export default function QuizLayout({
         <html lang="en">
             <body className={`${geistSans.variable} ${geistMono.variable} ${notoSansArabic.variable} antialiased`}>
                 <main className="flex-grow container mx-auto p-4">
-                    {children}
+                    <AuthProvider>
+                        <Toaster />
+                        {children}
+                    </AuthProvider>
                 </main>
             </body>
         </html>

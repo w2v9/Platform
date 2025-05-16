@@ -1,8 +1,9 @@
-import { FileUser, Home, Inbox, ScrollText, Settings, Users } from "lucide-react"
-
+'use client'
+import { LogOut } from "lucide-react"
 import {
     Sidebar,
     SidebarContent,
+    SidebarFooter,
     SidebarGroup,
     SidebarGroupContent,
     SidebarGroupLabel,
@@ -14,42 +15,16 @@ import {
 import Image from "next/image"
 import { Label } from "./ui/label"
 import { Separator } from "./ui/separator"
+import { signOut } from "@/lib/config/firebase-config"
+import { User } from "firebase/auth"
 
+export type SidebarItem = {
+    title: string
+    url: string
+    icon: React.ComponentType<React.SVGProps<SVGSVGElement>>
+}
 
-const items = [
-    {
-        title: "Home",
-        url: "/dashboard/home",
-        icon: Home,
-    },
-    {
-        title: "Quizzes",
-        url: "/dashboard/quizzes",
-        icon: ScrollText,
-    },
-    {
-        title: "Results",
-        url: "/dashboard/results",
-        icon: FileUser,
-    },
-    {
-        title: "Users",
-        url: "/dashboard/users",
-        icon: Users,
-    },
-    {
-        title: "Logs",
-        url: "/dashboard/logs",
-        icon: Inbox,
-    },
-    {
-        title: "Settings",
-        url: "/dashboard/settings",
-        icon: Settings,
-    },
-]
-
-export function AppSidebar() {
+export function AppSidebar({ items, user }: { items: SidebarItem[], user: User | null }) {
     return (
         <Sidebar collapsible="icon">
             <SidebarContent>
@@ -97,6 +72,30 @@ export function AppSidebar() {
                     </SidebarGroupContent>
                 </SidebarGroup>
             </SidebarContent>
+            <SidebarFooter>
+                <SidebarGroup>
+                    <SidebarGroupLabel asChild>
+                        <div>
+                            <span>{user?.displayName}</span>
+                            <Label className="ml-4 text-xs text-muted-foreground">
+                                {user?.email}
+                            </Label>
+                        </div>
+                    </SidebarGroupLabel>
+                    <SidebarGroupContent>
+                        <SidebarMenu>
+                            <SidebarMenuItem>
+                                <SidebarMenuButton className="cursor-pointer" onClick={() => {
+                                    signOut()
+                                }}>
+                                    <LogOut />
+                                    <span>Logout</span>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                        </SidebarMenu>
+                    </SidebarGroupContent>
+                </SidebarGroup>
+            </SidebarFooter>
         </Sidebar>
     )
 }

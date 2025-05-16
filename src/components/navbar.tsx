@@ -53,8 +53,10 @@ const Navbar: React.FC = () => {
                     {user ? (
                         <DropdownMenuContent className="w-48" side="bottom" align="end">
                             <DropdownMenuItem>
-                                <LayoutDashboard className="mr-2" />
-                                <span>Dashboard</span>
+                                <CustomLink href={'/dashboard/home'} className="flex items-center">
+                                    <LayoutDashboard className="mr-2" />
+                                    <span>Dashboard</span>
+                                </CustomLink>
                             </DropdownMenuItem>
                             <DropdownMenuLabel>My Account</DropdownMenuLabel>
                             <DropdownMenuSeparator />

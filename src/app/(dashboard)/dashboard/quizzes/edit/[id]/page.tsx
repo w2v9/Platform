@@ -1,12 +1,12 @@
 "use client";
 
 import type { Quiz, Question, Option } from "@/data/quiz";
-import { createQuiz } from "@/lib/db_quiz";
+import { getQuizById, updateQuiz } from "@/lib/db_quiz";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useFieldArray, Resolver } from "react-hook-form";
 import { v4 as uuidv4 } from "uuid";
-import { useState, useRef } from "react";
+import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChevronsUpDown, Plus, Trash2, Upload, AlertCircle, FileJson } from "lucide-react";
+import { AlertCircle, ChevronsUpDown, Loader, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
@@ -39,17 +39,19 @@ import {
     Collapsible,
     CollapsibleContent,
     CollapsibleTrigger,
-} from "@/components/ui/collapsible"
+} from "@/components/ui/collapsible";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { recordLog } from "@/lib/db_logs";
 import { useAuth } from "@/lib/context/authContext";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
+// Define the Option schema
 const optionSchema = z.object({
     id: z.string().optional(),
     option: z.string().min(1, { message: "Option text is required" }),
     isCorrect: z.boolean(),
 });
 
+// Define the Question schema
 const questionSchema = z.object({
     id: z.string().optional(),
     question: z.string().min(1, { message: "Question is required" }),
@@ -62,6 +64,7 @@ const questionSchema = z.object({
     answer: optionSchema,
 });
 
+// Define the Quiz schema
 const quizSchema = z.object({
     id: z.string().optional(),
     title: z.string().min(1, { message: "Title is required" }),
@@ -70,46 +73,24 @@ const quizSchema = z.object({
     quizType: z.enum(["normal", "no-review"]).optional(),
     questions: z.array(questionSchema).min(1, { message: "At least one question is required" }),
     createdAt: z.string().optional(),
+    updatedAt: z.string().optional(),
 });
 
 type QuizFormValues = z.infer<typeof quizSchema>;
 
-
-const sampleJsonFormat = {
-    "questions": [
-        {
-            "question": "What is the capital of France?",
-            "explanation": "Paris is the capital city of France",
-            "options": [
-                { "option": "London", "isCorrect": false },
-                { "option": "Paris", "isCorrect": true },
-                { "option": "Berlin", "isCorrect": false },
-                { "option": "Madrid", "isCorrect": false }
-            ]
-        },
-        {
-            "question": "Who painted the Mona Lisa?",
-            "explanation": "Leonardo da Vinci painted the Mona Lisa between 1503 and 1519",
-            "options": [
-                { "option": "Vincent van Gogh", "isCorrect": false },
-                { "option": "Pablo Picasso", "isCorrect": false },
-                { "option": "Leonardo da Vinci", "isCorrect": true },
-                { "option": "Michelangelo", "isCorrect": false }
-            ]
-        }
-    ]
-};
-
-export default function CreateQuizPage() {
-    const { user } = useAuth();
+export default function EditQuizPage({ params }: { params: Promise<{ id: string }> }) {
     const router = useRouter();
+    const unwrappedParams = use(params);
+    const quizId = unwrappedParams.id;
     const [activeTab, setActiveTab] = useState("general");
-    const [jsonData, setJsonData] = useState("");
-    const [jsonError, setJsonError] = useState<string | null>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [originalQuiz, setOriginalQuiz] = useState<Quiz | null>(null);
+    const [openQuestions, setOpenQuestions] = useState<Record<number, boolean>>({});
+    const { user } = useAuth();
 
     const quizForm = useForm<QuizFormValues>({
-        resolver: zodResolver(quizSchema) as unknown as Resolver<QuizFormValues>,
+        resolver: zodResolver(quizSchema) as Resolver<QuizFormValues>,
         defaultValues: {
             title: "",
             description: "",
@@ -130,104 +111,87 @@ export default function CreateQuizPage() {
                     answer: { option: "", isCorrect: false },
                 },
             ],
-            createdAt: new Date().toISOString(),
         },
     });
 
-    const { control, handleSubmit, formState: { errors, isSubmitting }, setValue, getValues, reset } = quizForm;
+    const { control, handleSubmit, reset, formState: { errors, isSubmitting, isDirty } } = quizForm;
 
-    const { fields: questionFields, append: appendQuestion, remove: removeQuestion, replace: replaceQuestions } =
+    const { fields: questionFields, append: appendQuestion, remove: removeQuestion } =
         useFieldArray({
             control,
             name: "questions",
         });
 
-    const processJsonData = (jsonString: string) => {
-        try {
-            setJsonError(null);
-            const data = JSON.parse(jsonString);
+    const toggleQuestion = (index: number) => {
+        setOpenQuestions(prev => ({
+            ...prev,
+            [index]: !prev[index]
+        }));
+    };
 
-            if (!data.questions || !Array.isArray(data.questions)) {
-                setJsonError("JSON must contain a 'questions' array");
-                return;
+    function getChangedFields(original: Quiz | null, updated: Quiz): string[] {
+        const changedFields: string[] = [];
+
+        if (!original) return changedFields;
+
+        for (const key in updated) {
+            if (original[key as keyof Quiz] !== updated[key as keyof Quiz]) {
+                changedFields.push(key);
             }
-
-            const processedQuestions = data.questions.map((q: any) => {
-                if (!q.question) {
-                    throw new Error("Each question must have a 'question' field");
-                }
-                if (!q.explanation) {
-                    throw new Error("Each question must have an 'explanation' field");
-                }
-                if (!q.options || !Array.isArray(q.options) || q.options.length < 2) {
-                    throw new Error("Each question must have at least 2 options");
-                }
-
-                const hasCorrectOption = q.options.some((opt: any) => opt.isCorrect === true);
-                if (!hasCorrectOption) {
-                    throw new Error(`Question "${q.question.substring(0, 20)}..." must have at least one correct option`);
-                }
-
-                const correctOption = q.options.find((opt: any) => opt.isCorrect === true);
-
-                return {
-                    id: q.id || uuidv4(),
-                    question: q.question,
-                    explanation: q.explanation,
-                    questionImage: q.questionImage || "",
-                    questionAudio: q.questionAudio || "",
-                    questionVideo: q.questionVideo || "",
-                    questionType: q.questionType || "single-choice",
-                    options: q.options.map((opt: any) => ({
-                        id: opt.id || uuidv4(),
-                        option: opt.option,
-                        isCorrect: opt.isCorrect
-                    })),
-                    answer: {
-                        id: correctOption.id || uuidv4(),
-                        option: correctOption.option,
-                        isCorrect: true
-                    }
-                };
-            });
-
-            replaceQuestions(processedQuestions);
-
-            toast.success(`Successfully imported ${processedQuestions.length} questions`);
-            setActiveTab("questions");
-        } catch (error) {
-            console.error("Error processing JSON data:", error);
-            setJsonError(error instanceof Error ? error.message : "Invalid JSON format");
-        }
-    };
-
-    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file) return;
-
-        if (file.type !== "application/json") {
-            setJsonError("Please upload a JSON file");
-            return;
         }
 
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const content = e.target?.result as string;
-            setJsonData(content);
-            processJsonData(content);
-        };
-        reader.onerror = () => {
-            setJsonError("Error reading the file");
-        };
-        reader.readAsText(file);
-    };
+        return changedFields;
+    }
+
+    useEffect(() => {
+        async function fetchQuiz() {
+            setIsLoading(true);
+
+            try {
+                const quiz: Quiz | null = await getQuizById(quizId);
+
+                if (!quiz) {
+                    setError("Quiz not found. It may have been deleted or you don't have permission to view it.");
+                    toast.error("Quiz not found");
+                    return;
+                }
+
+                const typedQuiz = quiz as Quiz;
+                setOriginalQuiz(typedQuiz);
+
+                reset({
+                    id: quizId,
+                    title: quiz.title,
+                    description: quiz.description,
+                    timeLimit: quiz.timeLimit,
+                    quizType: quiz.quizType || "normal",
+                    questions: quiz.questions,
+                    createdAt: quiz.createdAt,
+                })
+
+                setOpenQuestions({ 0: true });
+
+            } catch (error) {
+                console.error("Error fetching quiz:", error);
+                setError("Failed to load quiz. Please try again.");
+                toast.error("Failed to load quiz");
+            } finally {
+                setIsLoading(false);
+            }
+        }
+
+        fetchQuiz();
+    }, [quizId, reset]);
 
     const onSubmit = async (data: QuizFormValues) => {
+        const loadingToast = toast.loading("Updating quiz...");
+
         try {
-            const quizWithIds: Quiz = {
+            const updatedQuiz: Quiz = {
                 ...data,
-                id: data.id || uuidv4(),
-                createdAt: data.createdAt || new Date().toISOString(),
+                id: data.id || quizId,
+                updatedAt: new Date().toISOString(),
+                createdAt: data.createdAt || originalQuiz?.createdAt || new Date().toISOString(),
                 quizType: data.quizType || "normal",
                 questions: data.questions.map((question) => ({
                     ...question,
@@ -243,41 +207,141 @@ export default function CreateQuizPage() {
                 })),
             };
 
-            let docref = await createQuiz(quizWithIds);
+            await updateQuiz(updatedQuiz);
 
-            await recordLog({
-                id: uuidv4(),
-                userId: user?.uid || "",
-                action: "QUIZ_CREATED",
-                timestamp: new Date().toISOString(),
-                details: JSON.stringify({
-                    quizId: docref.id,
-                })
+            if (user?.uid) {
+                await recordLog({
+                    id: uuidv4(),
+                    userId: user.uid,
+                    action: "QUIZ_UPDATE",
+                    timestamp: new Date().toISOString(),
+                    details: JSON.stringify({
+                        quizId: updatedQuiz.id,
+                        quizTitle: updatedQuiz.title,
+                        changedFields: getChangedFields(originalQuiz, updatedQuiz)
+                    })
+                });
+            }
+
+            toast.success("Quiz updated successfully!", {
+                id: loadingToast,
             });
+            setOriginalQuiz(updatedQuiz);
 
-            toast.success("Quiz created successfully!");
-            router.push("/dashboard/quizzes");
+
         } catch (error) {
-            console.error("Error creating quiz:", error);
+            console.error("Error updating quiz:", error);
+            try {
+                const errorMessage = error instanceof Error
+                    ? error.message
+                    : typeof error === 'string'
+                        ? error
+                        : 'Unknown error occurred';
 
-            const errorMessage = error instanceof Error
-                ? error.message
-                : typeof error === 'string'
-                    ? error
-                    : 'Unknown error occurred';
+                await recordLog({
+                    id: uuidv4(),
+                    userId: user?.uid || "",
+                    action: "QUIZ_UPDATE_ERROR",
+                    timestamp: new Date().toISOString(),
+                    details: JSON.stringify({
+                        quizId: data.id,
+                        error: errorMessage,
+                    })
+                });
+            } catch (logError) {
+                console.error("Error logging update error:", logError);
+            }
 
-            await recordLog({
-                id: uuidv4(),
-                userId: user?.uid || "",
-                action: "QUIZ_CREATION_FAILED",
-                timestamp: new Date().toISOString(),
-                details: JSON.stringify({
-                    error: errorMessage,
-                })
+            toast.error("Failed to update quiz", {
+                id: loadingToast,
             });
-            toast.error("Failed to create quiz. Please try again.");
+        } finally {
+            router.push("/dashboard/quizzes");
         }
     };
+
+    const handleDiscard = () => {
+        if (originalQuiz) {
+            const confirmToast = toast.info("Discard changes?", {
+                action: {
+                    label: "Discard",
+                    onClick: () => {
+                        reset({
+                            id: originalQuiz.id,
+                            title: originalQuiz.title,
+                            description: originalQuiz.description,
+                            timeLimit: originalQuiz.timeLimit,
+                            quizType: originalQuiz.quizType || "normal",
+                            questions: originalQuiz.questions,
+                            createdAt: originalQuiz.createdAt,
+                        });
+                        toast.success("Changes discarded");
+                    }
+                },
+                cancel: {
+                    label: "Keep editing",
+                    onClick: () => {
+                        toast.info("Continuing to edit");
+                    }
+                }
+            });
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <SidebarInset>
+                <div className="h-screen flex items-center justify-center">
+                    <div className="flex flex-col items-center gap-2">
+                        <Loader className="h-8 w-8 animate-spin text-primary" />
+                        <p className="text-sm text-muted-foreground">Loading quiz...</p>
+                    </div>
+                </div>
+            </SidebarInset>
+        );
+    }
+
+    if (error) {
+        return (
+            <SidebarInset>
+                <header className="flex h-10 shrink-0 items-center gap-2 border-b px-4">
+                    <SidebarTrigger className="-ml-1" />
+                    <Separator orientation="vertical" className="mr-2 h-4" />
+                    <Breadcrumb>
+                        <BreadcrumbList>
+                            <BreadcrumbItem className="hidden md:block">
+                                <BreadcrumbLink href="/dashboard/home">
+                                    Dashboard
+                                </BreadcrumbLink>
+                            </BreadcrumbItem>
+                            <BreadcrumbSeparator className="hidden md:block" />
+                            <BreadcrumbItem className="hidden md:block">
+                                <BreadcrumbLink href="/dashboard/quizzes">
+                                    Quizzes
+                                </BreadcrumbLink>
+                            </BreadcrumbItem>
+                            <BreadcrumbSeparator className="hidden md:block" />
+                            <BreadcrumbItem>
+                                <BreadcrumbPage>Edit</BreadcrumbPage>
+                            </BreadcrumbItem>
+                        </BreadcrumbList>
+                    </Breadcrumb>
+                </header>
+                <div className="container mx-auto p-4">
+                    <Alert variant="destructive" className="mb-6">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>Error</AlertTitle>
+                        <AlertDescription>
+                            {error}
+                        </AlertDescription>
+                    </Alert>
+                    <Button onClick={() => router.push("/dashboard/quizzes")}>
+                        Return to Quiz List
+                    </Button>
+                </div>
+            </SidebarInset>
+        );
+    }
 
     return (
         <SidebarInset>
@@ -299,21 +363,27 @@ export default function CreateQuizPage() {
                         </BreadcrumbItem>
                         <BreadcrumbSeparator className="hidden md:block" />
                         <BreadcrumbItem>
-                            <BreadcrumbPage>Create</BreadcrumbPage>
+                            <BreadcrumbPage>Edit Quiz</BreadcrumbPage>
                         </BreadcrumbItem>
                     </BreadcrumbList>
                 </Breadcrumb>
             </header>
             <div className="container mx-auto p-4">
-                <h1 className="text-2xl font-bold mb-6">Create New Quiz</h1>
+                <div className="flex items-center justify-between mb-6">
+                    <h1 className="text-2xl font-bold">Edit Quiz</h1>
+                    {isDirty && (
+                        <div className="text-sm text-amber-600 bg-amber-50 px-3 py-1 rounded-md">
+                            You have unsaved changes
+                        </div>
+                    )}
+                </div>
 
                 <Form {...quizForm}>
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
                         <Tabs value={activeTab} onValueChange={setActiveTab}>
                             <TabsList className="mb-6">
                                 <TabsTrigger value="general">General Info</TabsTrigger>
-                                <TabsTrigger value="questions">Questions</TabsTrigger>
-                                <TabsTrigger value="bulk-upload">Bulk Upload</TabsTrigger>
+                                <TabsTrigger value="questions">Questions ({questionFields.length})</TabsTrigger>
                             </TabsList>
 
                             <TabsContent value="general" className="space-y-6">
@@ -377,7 +447,7 @@ export default function CreateQuizPage() {
                                         />
                                         <FormField
                                             control={control}
-                                            name={`quizType`}
+                                            name="quizType"
                                             render={({ field }) => (
                                                 <FormItem>
                                                     <FormLabel>Quiz Type</FormLabel>
@@ -392,9 +462,12 @@ export default function CreateQuizPage() {
                                                         </FormControl>
                                                         <SelectContent>
                                                             <SelectItem value="normal">Normal Quiz</SelectItem>
-                                                            <SelectItem value="no-review">Special Quiz</SelectItem>
+                                                            <SelectItem value="no-review">No Review Quiz</SelectItem>
                                                         </SelectContent>
                                                     </Select>
+                                                    <FormDescription>
+                                                        "No Review" prevents users from reviewing their answers during the quiz
+                                                    </FormDescription>
                                                     <FormMessage />
                                                 </FormItem>
                                             )}
@@ -405,7 +478,7 @@ export default function CreateQuizPage() {
                                             type="button"
                                             onClick={() => setActiveTab("questions")}
                                         >
-                                            Next: Add Questions
+                                            Next: Edit Questions
                                         </Button>
                                     </CardFooter>
                                 </Card>
@@ -414,16 +487,32 @@ export default function CreateQuizPage() {
                             <TabsContent value="questions" className="space-y-6">
                                 {questionFields.map((questionField, questionIndex) => (
                                     <Card key={questionField.id} className="relative">
-                                        <Collapsible>
+                                        <Collapsible
+                                            open={openQuestions[questionIndex]}
+                                            onOpenChange={() => toggleQuestion(questionIndex)}
+                                        >
                                             <CardHeader className="flex flex-row items-center justify-between">
-                                                <CardTitle>Question {questionIndex + 1}</CardTitle>
+                                                <CardTitle>
+                                                    Question {questionIndex + 1}
+                                                    {quizForm.watch(`questions.${questionIndex}.question`) && (
+                                                        <span className="text-sm font-normal text-muted-foreground ml-2">
+                                                            {quizForm.watch(`questions.${questionIndex}.question`).substring(0, 40)}
+                                                            {quizForm.watch(`questions.${questionIndex}.question`).length > 40 ? '...' : ''}
+                                                        </span>
+                                                    )}
+                                                </CardTitle>
                                                 <div className="flex items-center space-x-2">
                                                     {questionFields.length > 1 && (
                                                         <Button
                                                             variant="destructive"
                                                             size="icon"
                                                             type="button"
-                                                            onClick={() => removeQuestion(questionIndex)}
+                                                            onClick={() => {
+                                                                toast.info("Question removed", {
+                                                                    description: "You can undo this by discarding changes"
+                                                                });
+                                                                removeQuestion(questionIndex);
+                                                            }}
                                                         >
                                                             <Trash2 className="h-4 w-4" />
                                                         </Button>
@@ -600,6 +689,17 @@ export default function CreateQuizPage() {
                                             ],
                                             answer: { option: "", isCorrect: false },
                                         });
+
+                                        // Auto-open the new question
+                                        const newIndex = questionFields.length;
+                                        setOpenQuestions(prev => ({
+                                            ...prev,
+                                            [newIndex]: true
+                                        }));
+
+                                        toast.info("New question added", {
+                                            description: "Don't forget to fill in all required fields"
+                                        });
                                     }}
                                 >
                                     <Plus className="h-4 w-4 mr-2" />
@@ -614,102 +714,24 @@ export default function CreateQuizPage() {
                                     >
                                         Back to General Info
                                     </Button>
-                                    <Button type="submit" disabled={isSubmitting}>
-                                        {isSubmitting ? "Creating..." : "Create Quiz"}
+
+                                    {isDirty && (
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            onClick={handleDiscard}
+                                        >
+                                            Discard Changes
+                                        </Button>
+                                    )}
+
+                                    <Button
+                                        type="submit"
+                                        disabled={isSubmitting || !isDirty}
+                                    >
+                                        {isSubmitting ? "Saving..." : "Save Changes"}
                                     </Button>
                                 </div>
-                            </TabsContent>
-
-                            {/* Bulk Upload Tab */}
-                            <TabsContent value="bulk-upload" className="space-y-6">
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle>Bulk Upload Questions</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="space-y-6">
-                                        <div className="space-y-2">
-                                            <div className="flex items-center gap-4">
-                                                <Button
-                                                    type="button"
-                                                    variant="outline"
-                                                    onClick={() => fileInputRef.current?.click()}
-                                                >
-                                                    <Upload className="h-4 w-4 mr-2" />
-                                                    Upload JSON File
-                                                </Button>
-                                                <input
-                                                    type="file"
-                                                    accept=".json"
-                                                    ref={fileInputRef}
-                                                    className="hidden"
-                                                    onChange={handleFileUpload}
-                                                />
-
-                                                <Button
-                                                    type="button"
-                                                    variant="secondary"
-                                                    onClick={() => {
-                                                        // Copy sample JSON to clipboard
-                                                        navigator.clipboard.writeText(JSON.stringify(sampleJsonFormat, null, 2))
-                                                            .then(() => toast.success("Sample JSON copied to clipboard"))
-                                                            .catch(() => toast.error("Failed to copy to clipboard"));
-                                                    }}
-                                                >
-                                                    <FileJson className="h-4 w-4 mr-2" />
-                                                    Copy Sample Format
-                                                </Button>
-                                            </div>
-
-                                            <p className="text-sm text-muted-foreground">
-                                                Upload a JSON file or paste your JSON data below
-                                            </p>
-                                        </div>
-
-                                        {jsonError && (
-                                            <Alert variant="destructive">
-                                                <AlertCircle className="h-4 w-4" />
-                                                <AlertTitle>Error</AlertTitle>
-                                                <AlertDescription>{jsonError}</AlertDescription>
-                                            </Alert>
-                                        )}
-
-                                        <div className="space-y-2">
-                                            <FormLabel>JSON Data</FormLabel>
-                                            <Textarea
-                                                placeholder="Paste your JSON data here..."
-                                                className="min-h-[300px] font-mono text-sm"
-                                                value={jsonData}
-                                                onChange={(e) => setJsonData(e.target.value)}
-                                            />
-                                            <FormDescription>
-                                                Your JSON should contain a 'questions' array with each question having fields for 'question', 'explanation', and 'options'.
-                                            </FormDescription>
-                                        </div>
-                                    </CardContent>
-                                    <CardFooter className="flex justify-between">
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            onClick={() => setActiveTab("general")}
-                                        >
-                                            Back to General Info
-                                        </Button>
-
-                                        <Button
-                                            type="button"
-                                            onClick={() => {
-                                                if (jsonData.trim()) {
-                                                    processJsonData(jsonData);
-                                                } else {
-                                                    setJsonError("Please enter JSON data");
-                                                }
-                                            }}
-                                            disabled={!jsonData.trim()}
-                                        >
-                                            Process JSON Data
-                                        </Button>
-                                    </CardFooter>
-                                </Card>
                             </TabsContent>
                         </Tabs>
                     </form>

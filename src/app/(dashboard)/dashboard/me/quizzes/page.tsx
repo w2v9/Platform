@@ -12,7 +12,7 @@ import {
     BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
-import { Loader } from "lucide-react";
+import { Loader, PlayIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { useEffect } from "react";
@@ -67,22 +67,8 @@ import {
 } from "@/components/ui/card"
 
 import { toast, ToastT } from "sonner";
+import Link from "next/link";
 
-
-export const actionCards = [
-    {
-        title: "Create Quiz",
-        description: "Create a new quiz",
-        icon: () => <FilePlus />,
-        action: '/dashboard/quizzes/create',
-    },
-    {
-        title: "Edit Quizzes",
-        description: "Eid a quiz",
-        icon: () => <SquarePen />,
-        action: '/dashboard/quizzes/edit',
-    },
-]
 
 const columns: ColumnDef<Quiz>[] = [
     {
@@ -161,32 +147,14 @@ const columns: ColumnDef<Quiz>[] = [
             const quiz = row.original
 
             return (
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem
-                            onClick={() => navigator.clipboard.writeText(quiz.id)}
-                        >
-                            Copy ID
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => window.location.href = `/dashboard/quizzes/edit/${quiz.id}`}>
-                            Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => window.location.href = `/dashboard/quizzes/preview/${quiz.id}`}>
-                            Preview
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive">
-                            Delete
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                <Button variant="primary" asChild
+                >
+                    <Link href={`/quiz  /${quiz.id}`}>
+                        <span className="sr-only">Start quiz</span>
+                        <PlayIcon className="h-4 w-4" />
+                        <span>Start quiz</span>
+                    </Link>
+                </Button>
             )
         },
     },
@@ -198,6 +166,7 @@ export default function Quizzes() {
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
     const [rowSelection, setRowSelection] = useState({})
+    const router = useRouter()
 
     const table = useReactTable({
         data: quizzes,
@@ -256,7 +225,7 @@ export default function Quizzes() {
                 <Breadcrumb>
                     <BreadcrumbList>
                         <BreadcrumbItem className="hidden md:block">
-                            <BreadcrumbLink href="/dashboard/admin">
+                            <BreadcrumbLink href="/dashboard/home">
                                 Dashboard
                             </BreadcrumbLink>
                         </BreadcrumbItem>
@@ -267,22 +236,8 @@ export default function Quizzes() {
                     </BreadcrumbList>
                 </Breadcrumb>
             </header>
-            <div className="flex flex-1 flex-col gap-4 p-4">
-                <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-                    {actionCards.map((card, index) => (
-                        <ActionCard
-                            key={index}
-                            title={card.title}
-                            description={card.description}
-                            icon={card.icon}
-                            action={card.action}
-                        />
-                    ))}
-                </div>
-            </div>
-            <Separator className="my-4" />
 
-            <Card className="mx-4 relative">
+            <Card className="m-4 relative">
                 {loading && (
                     <div className="absolute inset-0 flex items-center justify-center bg-background/50 z-10 backdrop-blur-sm rounded-md">
                         <div className="flex flex-col items-center gap-2">
@@ -293,7 +248,6 @@ export default function Quizzes() {
                 )}
                 <CardHeader>
                     <CardTitle>Quizzes</CardTitle>
-                    <CardDescription>Manage your quizzes</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="mb-4 flex items-center justify-between">

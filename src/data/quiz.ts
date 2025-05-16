@@ -3,8 +3,10 @@ export type Quiz = {
     title: string
     description: string
     timeLimit: number
+    quizType: "normal" | "no-review"
     questions: Question[]
     createdAt: string
+    updatedAt?: string
 }
 
 export type Question = {

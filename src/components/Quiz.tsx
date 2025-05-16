@@ -1,19 +1,7 @@
 'use client'
 import Image from "next/image";
-import { Quiz, Question, Option } from "@/data/quiz";
+import { Quiz, Option } from "@/data/quiz";
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import {
-    Drawer,
-    DrawerClose,
-    DrawerContent,
-    DrawerDescription,
-    DrawerFooter,
-    DrawerHeader,
-    DrawerTitle,
-    DrawerTrigger,
-} from "@/components/ui/drawer"
 
 import {
     ResizableHandle,
@@ -23,12 +11,16 @@ import {
 
 import { Progress } from "@/components/ui/progress"
 import { Clock, FlagIcon, MoveLeft, MoveRight } from "lucide-react";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, use } from "react";
 import { ScrollArea } from "./ui/scroll-area";
 import { Toggle } from "@/components/ui/toggle";
-import { Badge } from "./ui/badge";
-import { Label } from "./ui/label";
 import { useMediaQuery } from "./hooks/useMediaQuary";
+import { useAuth } from "@/lib/context/authContext";
+import { createReport, QuizReport } from "@/lib/utils/db_reports";
+import { toast } from "sonner";
+import { recordLog } from "@/lib/db_logs";
+import { v4 } from "uuid";
+import { useRouter } from "next/navigation";
 
 export function QustionCard({ index, currentIndex, setCurentIndex, markedForReview, answerSelected }: {
     index: number,
@@ -49,17 +41,19 @@ export function QustionCard({ index, currentIndex, setCurentIndex, markedForRevi
         </Button>
     );
 }
-export function QustionCard2({ index, setCurentIndex, markedForReview, answer }: {
+export function QustionCard2({ index, setCurentIndex, markedForReview, answer, isHardMode }: {
     index: number,
     setCurentIndex: (index: number) => void,
     markedForReview?: boolean,
     answer?: string | null
+    isHardMode?: boolean
 }) {
     return (
         <Button
             variant={"outline"}
             className="flex flex-row items-center justify-between w-full px-4 py-6 rounded-md"
             onClick={() => setCurentIndex(index)}
+            disabled={isHardMode}
             asChild>
             <div>
                 <div className="flex flex-row items-center justify-start gap-2 p-2 rounded-md ">
@@ -68,7 +62,7 @@ export function QustionCard2({ index, setCurentIndex, markedForReview, answer }:
                     <p></p>
                 </div>
                 <div>
-                    <p>{answer && answer}
+                    <p>{answer && <span className="text-gray-400">Answered</span>}
                         {!answer && <span className="text-gray-400">Not answered</span>}
                     </p>
                 </div>
@@ -101,6 +95,7 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
             markedForReview: false,
         }));
     })
+    const { user } = useAuth();
 
     const [timeRemaining, setTimeRemaining] = useState<number>(quizData.timeLimit * 60 || 1800);
     const [isTimerExpired, setIsTimerExpired] = useState<boolean>(false);
@@ -119,19 +114,10 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
         return () => clearInterval(timer);
     }, [timeRemaining]);
 
-    // Handle timer expiration
-    const handleTimerExpired = useCallback(() => {
-        // Auto-submit quiz or show prompt
-        alert("Time's up! Your quiz will be submitted automatically.");
-        // Here you would add code to submit the quiz
-    }, []);
 
-    // Get current question data
     const currentFormData = formData[currentQuestionIndex];
     const currentQuestion = quizData.questions[currentQuestionIndex];
 
-
-    // Handle single choice answer selection
     const handleSingleChoiceToggle = (answer: string) => {
         setFormData(prev => prev.map(item => {
             if (item.index === currentQuestionIndex) {
@@ -144,8 +130,6 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
         }));
     };
 
-
-    // Handle mark for review toggle
     const handleMarkForReview = () => {
         setFormData(prev => prev.map(item =>
             item.index === currentQuestionIndex
@@ -154,7 +138,82 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
         ));
     };
 
-    // Set height to viewport height on component mount
+    const handleSubmit = useCallback(async () => {
+
+        const answeredQuestions = formData.filter(item => item.answer !== null);
+        const score = answeredQuestions.reduce((acc, item) => {
+            const question = quizData.questions[item.index];
+            return acc + (item.answer === question.answer.option ? 1 : 0);
+        }, 0);
+
+        const maxScore = quizData.questions.length;
+        const percentageScore = (score / maxScore) * 100;
+
+        const quizReport: QuizReport = {
+            quizId: quizData.id,
+            quizTitle: quizData.title,
+            answeredQuestions: quizData.questions.filter((_, index) => formData[index].answer !== null),
+            selectedOptions: formData.map(item => ({
+                questionId: quizData.questions[item.index].id,
+                selectedOptionId: item.answer || "",
+            })),
+            userName: user?.email || user?.displayName || "",
+            timeTaken: ((quizData.timeLimit * 60) - timeRemaining) / 60, // in minutes
+            userId: user?.uid || "",
+            score,
+            maxScore,
+            percentageScore,
+            dateTaken: new Date().toISOString(),
+        };
+
+        try {
+            toast.loading("Saving your quiz report...");
+            let docref = await createReport(quizReport);
+            await recordLog({
+                id: v4(),
+                userId: user?.uid || "",
+                action: "CREATE_REPORT",
+                details: JSON.stringify({
+                    msg: `User ${user?.displayName} created a quiz report for quiz ${quizData.title}`,
+                    quizId: quizData.id,
+                    quizTitle: quizData.title,
+                    quizReportId: docref.id,
+                }),
+                timestamp: new Date().toISOString(),
+            });
+            toast.dismiss();
+            toast.success("Quiz report saved successfully!");
+            useRouter().push("/dashboard/reports");
+        } catch (error) {
+            console.error("Error saving quiz report:", error);
+            let errorMessage = "An error occurred while saving the quiz report.";
+            if (error instanceof Error) {
+                errorMessage = error.message;
+            }
+            await recordLog({
+                id: v4(),
+                userId: user?.uid || "",
+                action: "ERROR",
+                details: JSON.stringify({
+                    msg: errorMessage,
+                    quizId: quizData.id,
+                    quizTitle: quizData.title,
+                }),
+                timestamp: new Date().toISOString(),
+            });
+            toast.error("Error saving quiz report.");
+        }
+
+    }, [formData, quizData, user]);
+
+    useEffect(() => {
+        if (timeRemaining <= 0 && !isTimerExpired) {
+            setIsTimerExpired(true);
+            toast.error("Time is up! Submitting your quiz...");
+            handleSubmit();
+        }
+    }, [timeRemaining, isTimerExpired, handleSubmit]);
+
     useEffect(() => {
         document.body.style.overflow = 'hidden';
         return () => {
@@ -220,9 +279,6 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
                             <ResizablePanel defaultSize={50}>
                                 <div className="flex h-full items-center justify-center p-6">
                                     <ScrollArea className="h-full w-full">
-                                        {
-                                            //<Badge variant="outline">{currentQuestion.questionType}</Badge>
-                                        }
                                         <h2 className="font-bold">Explanation:</h2>
                                         <p className="text-gray-700">{currentQuestion.explanation}</p>
                                         {currentQuestion.questionImage && (
@@ -255,7 +311,7 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
                                                 {currentQuestion.options.map((option: Option) => (
                                                     <div
                                                         key={option.id}
-                                                        className={`p-3 border rounded-md cursor-pointer transition-colors ${currentFormData.answer === option.option
+                                                        className={`my-4 p-3 border rounded-md cursor-pointer transition-colors ${currentFormData.answer === option.option
                                                             ? "bg-primary text-primary-foreground"
                                                             : "bg-white hover:bg-gray-50"
                                                             }`}
@@ -297,12 +353,13 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
                                     setCurentIndex={setCurrentQuestionIndex}
                                     markedForReview={question.markedForReview}
                                     answer={question.answer}
+                                    isHardMode={quizData.quizType === "no-review" ? true : false}
                                 />
                             ))}
                         </div>
                         <div className="flex flex-row items-center justify-between mt-4">
                             <Button variant="outline" onClick={() => setCurrentQuestionIndex(0)}>Start Over</Button>
-                            <Button variant="default" onClick={() => alert("Quiz submitted!")}>Submit Quiz</Button>
+                            <Button variant="default" onClick={handleSubmit} disabled={isTimerExpired}>Submit Quiz</Button>
                         </div>
                     </ScrollArea>
                 )
@@ -311,73 +368,13 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
                 <div className="flex justify-between">
                     <Button
                         variant="outline"
-                        disabled={currentQuestionIndex === 0}
+                        disabled={currentQuestionIndex === 0 || quizData.quizType === "no-review"}
                         onClick={() => setCurrentQuestionIndex(prev => prev - 1)}
+
                     >
                         <MoveLeft size={16} className="ml-2" />
                         Previous
                     </Button>
-                    <div className="flex flex-row items-center gap-2">
-                        <Drawer>
-                            <DrawerTrigger asChild>
-                                <Button variant="outline">Questions</Button>
-                            </DrawerTrigger>
-                            <DrawerContent className="w-full items-center justify-center">
-                                <DrawerHeader>
-                                    <DrawerTitle>All Questions</DrawerTitle>
-                                    <DrawerDescription>
-                                        Here you can see all the questions in the quiz. Click on a question to jump to it.
-                                    </DrawerDescription>
-                                    <div className="flex flex-row items-center justify-between w-full mt-4">
-                                        <div id="current-question" className="flex flex-row items-center gap-2">
-                                            <Button
-                                                variant="default"
-                                                className={`w-10 h-10 flex items-center justify-center rounded-full `}
-                                                disabled> i</Button>
-                                            <Label> Current Question </Label>
-                                        </div>
-                                        <div id="answered-question" className="flex flex-row items-center gap-2">
-                                            <Button
-                                                variant={`outline`}
-                                                className={`w-10 h-10 flex items-center justify-center rounded-full bg-primary text-white`}
-                                                disabled={false} > i </Button>
-                                            <Label> Answered </Label>
-                                        </div>
-                                        <div id="marked-for-review" className="flex flex-row items-center gap-2">
-                                            <Button
-                                                variant={`outline`}
-                                                className={`w-10 h-10 flex items-center justify-center rounded-full ring-2 ring-yellow-400`}
-                                                disabled={false} > i </Button>
-                                            <Label> Marked for Review </Label>
-                                        </div>
-
-                                    </div>
-                                    <div className="grid grid-cols-5 gap-2 mt-4 w-full max-w-md mx-auto">
-                                        {formData.map((question, index) => (
-                                            <QustionCard
-                                                key={index}
-                                                index={index}
-                                                currentIndex={currentQuestionIndex}
-                                                setCurentIndex={setCurrentQuestionIndex}
-                                                markedForReview={question.markedForReview}
-                                                answerSelected={question.answer !== null}
-                                            />
-                                        ))}
-                                    </div>
-                                </DrawerHeader>
-                                <DrawerFooter className="flex flex-row justify-end space-x-2">
-                                    <DrawerClose asChild>
-                                        <Button variant="outline">Cancel</Button>
-                                    </DrawerClose>
-                                    <Button variant="outline" onClick={() => setCurrentQuestionIndex(quizData.questions.length)}>
-                                        <FlagIcon size={16} className="mr-2" /> Review Questions
-                                    </Button>
-                                    <Button type="submit">Submit</Button>
-                                </DrawerFooter>
-                            </DrawerContent>
-                        </Drawer>
-                    </div>
-
                     <Button
                         disabled={currentQuestionIndex === quizData.questions.length}
                         onClick={() => setCurrentQuestionIndex(prev => prev + 1)}

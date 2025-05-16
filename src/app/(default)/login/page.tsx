@@ -14,9 +14,9 @@ import { Button } from "@/components/ui/button"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { signIn } from "@/lib/config/firebase-config"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
+import { loginUser } from "@/lib/db_user"
 
 const formSchema = z.object({
     email: z.string().min(1, { message: "Email is required" }).email({ message: "Invalid email address" }),
@@ -35,9 +35,8 @@ export default function LoginPage() {
     })
 
     function onSubmit(values: z.infer<typeof formSchema>) {
-        const promise = signIn(values.email, values.password)
+        const promise = loginUser(values.email, values.password)
             .then((userCredential) => {
-                // Login successful
                 toast.success("Login successful!");
                 router.push("/dashboard");
             })
