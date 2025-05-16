@@ -4,8 +4,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-    title: "AzoozGAT Quiz Platform",
-    description: "Interactive quiz platform for learning and assessment",
+    title: "AzoozGAT Platform",
+    description: "Interactive platform for learning and assessment",
 };
 
 export default function RootLayout({
