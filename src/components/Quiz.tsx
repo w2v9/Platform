@@ -11,7 +11,7 @@ import {
 
 import { Progress } from "@/components/ui/progress"
 import { Clock, FlagIcon, MoveLeft, MoveRight } from "lucide-react";
-import { useState, useEffect, useCallback, use } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { ScrollArea } from "./ui/scroll-area";
 import { Toggle } from "@/components/ui/toggle";
 import { useMediaQuery } from "./hooks/useMediaQuary";
@@ -99,6 +99,7 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
 
     const [timeRemaining, setTimeRemaining] = useState<number>(quizData.timeLimit * 60 || 1800);
     const [isTimerExpired, setIsTimerExpired] = useState<boolean>(false);
+    const router = useRouter();
 
     const isDesktop = useMediaQuery("(min-width: 768px)");
 
@@ -168,7 +169,7 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
 
         try {
             toast.loading("Saving your quiz report...");
-            let docref = await createReport(quizReport);
+            const docref = await createReport(quizReport);
             await recordLog({
                 id: v4(),
                 userId: user?.uid || "",
@@ -183,7 +184,7 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
             });
             toast.dismiss();
             toast.success("Quiz report saved successfully!");
-            useRouter().push("/dashboard/reports");
+            router.push("/dashboard/reports");
         } catch (error) {
             console.error("Error saving quiz report:", error);
             let errorMessage = "An error occurred while saving the quiz report.";
@@ -204,7 +205,7 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
             toast.error("Error saving quiz report.");
         }
 
-    }, [formData, quizData, user]);
+    }, [formData, quizData, user, timeRemaining, router]);
 
     useEffect(() => {
         if (timeRemaining <= 0 && !isTimerExpired) {

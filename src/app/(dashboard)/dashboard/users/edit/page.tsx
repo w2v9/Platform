@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { User, getUserById } from "@/lib/db_user";
+import { User } from "@/lib/db_user";
 import { Loader } from "lucide-react";
 import { toast } from "sonner";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
@@ -31,13 +31,9 @@ import {
     ArrowUpDown,
     ChevronDown,
     MoreHorizontal,
-    Lock,
-    Shield,
-    Clock,
     UserCog,
     FileQuestion,
     Ban,
-    CheckCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -72,7 +68,6 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from "@/components/ui/dialog";
 
 import { Badge } from "@/components/ui/badge";
@@ -92,7 +87,6 @@ export default function UsersPage() {
     const [quizAssignDialogOpen, setQuizAssignDialogOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
-    // Define table columns
     const columns: ColumnDef<User>[] = [
         {
             id: "select",

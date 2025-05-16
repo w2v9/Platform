@@ -466,7 +466,7 @@ export default function EditQuizPage({ params }: { params: Promise<{ id: string 
                                                         </SelectContent>
                                                     </Select>
                                                     <FormDescription>
-                                                        "No Review" prevents users from reviewing their answers during the quiz
+                                                        &quot;No Review&quot; prevents users from reviewing their answers during the quiz
                                                     </FormDescription>
                                                     <FormMessage />
                                                 </FormItem>

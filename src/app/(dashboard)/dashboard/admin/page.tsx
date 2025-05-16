@@ -13,23 +13,19 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import type { Quiz } from "@/data/quiz"
-import { auth, db } from "@/lib/config/firebase-config"
+import { db } from "@/lib/config/firebase-config"
 import type { User } from "@/lib/db_user"
 import { getAllReports, type QuizReport } from "@/lib/utils/db_reports"
 import { collection, getDocs, query, orderBy, limit } from "firebase/firestore"
 import { useEffect, useState } from "react"
 import type { Log } from "@/lib/db_logs"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Activity,
   Users as UsersIcon,
   BookOpen,
   FileText,
-  BarChart3,
-  PieChart,
   Clock,
-  TrendingUp,
-  TrendingDown,
   GraduationCap,
   AlertTriangle,
   CheckCircle2,
@@ -37,9 +33,9 @@ import {
   User as UserIcon,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { format, subDays } from "date-fns"
 import {
@@ -52,8 +48,7 @@ import {
 } from "@/components/ui/dialog"
 import { Progress } from "@/components/ui/progress"
 import { getQuizzes } from "@/lib/db_quiz"
-import { useAuth } from "@/lib/context/authContext"
-import { useRouter } from "next/router"
+
 
 export default function Page() {
   const [users, setUsers] = useState<User[]>([]);
@@ -62,7 +57,6 @@ export default function Page() {
   const [logs, setLogs] = useState<Log[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedLog, setSelectedLog] = useState<Log | null>(null);
-  const { user } = useAuth();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -76,7 +70,7 @@ export default function Page() {
         });
         setUsers(usersList);
 
-        let reportsData = await getAllReports();
+        const reportsData = await getAllReports();
         setReports(reportsData);
 
         const quizzesData = await getQuizzes();
@@ -183,7 +177,7 @@ export default function Page() {
         <div className="flex flex-1 flex-col gap-4 p-4 md:p-8">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-            <p className="text-muted-foreground">Overview of your platform's performance and activity.</p>
+            <p className="text-muted-foreground">Overview of your platform&apos;s performance and activity.</p>
           </div>
 
           {/* Key Metrics Section */}
@@ -826,7 +820,7 @@ export default function Page() {
                 <CardHeader>
                   <CardTitle>Inactive Users</CardTitle>
                   <CardDescription>
-                    Users who haven't taken any quizzes
+                    Users who haven&apos;t taken any quizzes
                   </CardDescription>
                 </CardHeader>
                 <CardContent>

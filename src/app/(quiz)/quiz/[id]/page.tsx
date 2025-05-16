@@ -5,6 +5,12 @@ import { useEffect, useState, use } from "react";
 import { getQuizById } from "@/lib/db_quiz";
 import { toast } from "sonner";
 import { Loader } from "lucide-react";
+import { Metadata } from "next";
+
+const metadata: Metadata = {
+    title: "Quiz - AzoozGAT Platform",
+    description: "Take the quiz and test your knowledge!",
+};
 
 export default function QuizPage({ params }: { params: Promise<{ id: string }> }) {
     const unwrappedParams = use(params);

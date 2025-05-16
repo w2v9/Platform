@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
 import { Loader } from "lucide-react";
-import { useRouter } from "next/navigation";
 
 import { useEffect } from "react";
 import { useState } from "react";
@@ -66,131 +65,8 @@ import {
     CardTitle,
 } from "@/components/ui/card"
 
-import { toast, ToastT } from "sonner";
+import { toast } from "sonner";
 
-
-export const actionCards = [
-    {
-        title: "Create Quiz",
-        description: "Create a new quiz",
-        icon: () => <FilePlus />,
-        action: '/dashboard/quizzes/create',
-    },
-    {
-        title: "Edit Quizzes",
-        description: "Eid a quiz",
-        icon: () => <SquarePen />,
-        action: '/dashboard/quizzes/edit',
-    },
-]
-
-const columns: ColumnDef<Quiz>[] = [
-    {
-        id: "select",
-        header: ({ table }) => (
-            <Checkbox
-                checked={
-                    table.getIsAllPageRowsSelected() ||
-                    (table.getIsSomePageRowsSelected() && "indeterminate")
-                }
-                onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                aria-label="Select all"
-            />
-        ),
-        cell: ({ row }) => (
-            <Checkbox
-                checked={row.getIsSelected()}
-                onCheckedChange={(value) => row.toggleSelected(!!value)}
-                aria-label="Select row"
-            />
-        ),
-        enableSorting: false,
-        enableHiding: false,
-    },
-    {
-        accessorKey: "title",
-        header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                >
-                    Title
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            )
-        },
-        cell: ({ row }) => <div className="font-medium">{row.getValue("title")}</div>,
-    },
-    {
-        accessorKey: "timeLimit",
-        header: "Time Limit",
-        cell: ({ row }) => (
-            <div>{row.getValue("timeLimit")} minutes</div>
-        ),
-    },
-    {
-        accessorKey: "questions",
-        header: "Questions",
-        cell: ({ row }) => {
-            const questions = row.getValue("questions") as Question[]
-            return <div>{questions.length} questions</div>
-        },
-    },
-    {
-        accessorKey: "createdAt",
-        header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                >
-                    Created
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            )
-        },
-        cell: ({ row }) => {
-            const date = new Date(row.getValue("createdAt"))
-            return <div>{date.toLocaleDateString()}</div>
-        },
-    },
-    {
-        id: "actions",
-        cell: ({ row }) => {
-            const quiz = row.original
-
-            return (
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem
-                            onClick={() => navigator.clipboard.writeText(quiz.id)}
-                        >
-                            Copy ID
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => window.location.href = `/dashboard/quizzes/edit/${quiz.id}`}>
-                            Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => window.location.href = `/dashboard/quizzes/preview/${quiz.id}`}>
-                            Preview
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive">
-                            Delete
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            )
-        },
-    },
-]
 
 export default function Quizzes() {
     const [quizzes, setQuizzes] = useState<Quiz[]>([]);
@@ -198,6 +74,130 @@ export default function Quizzes() {
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
     const [rowSelection, setRowSelection] = useState({})
+    const [loading, setLoading] = useState(true);
+
+    const actionCards = [
+        {
+            title: "Create Quiz",
+            description: "Create a new quiz",
+            icon: () => <FilePlus />,
+            action: '/dashboard/quizzes/create',
+        },
+        {
+            title: "Edit Quizzes",
+            description: "Eid a quiz",
+            icon: () => <SquarePen />,
+            action: '/dashboard/quizzes/edit',
+        },
+    ]
+
+    const columns: ColumnDef<Quiz>[] = [
+        {
+            id: "select",
+            header: ({ table }) => (
+                <Checkbox
+                    checked={
+                        table.getIsAllPageRowsSelected() ||
+                        (table.getIsSomePageRowsSelected() && "indeterminate")
+                    }
+                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                    aria-label="Select all"
+                />
+            ),
+            cell: ({ row }) => (
+                <Checkbox
+                    checked={row.getIsSelected()}
+                    onCheckedChange={(value) => row.toggleSelected(!!value)}
+                    aria-label="Select row"
+                />
+            ),
+            enableSorting: false,
+            enableHiding: false,
+        },
+        {
+            accessorKey: "title",
+            header: ({ column }) => {
+                return (
+                    <Button
+                        variant="ghost"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                    >
+                        Title
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                )
+            },
+            cell: ({ row }) => <div className="font-medium">{row.getValue("title")}</div>,
+        },
+        {
+            accessorKey: "timeLimit",
+            header: "Time Limit",
+            cell: ({ row }) => (
+                <div>{row.getValue("timeLimit")} minutes</div>
+            ),
+        },
+        {
+            accessorKey: "questions",
+            header: "Questions",
+            cell: ({ row }) => {
+                const questions = row.getValue("questions") as Question[]
+                return <div>{questions.length} questions</div>
+            },
+        },
+        {
+            accessorKey: "createdAt",
+            header: ({ column }) => {
+                return (
+                    <Button
+                        variant="ghost"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                    >
+                        Created
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                )
+            },
+            cell: ({ row }) => {
+                const date = new Date(row.getValue("createdAt"))
+                return <div>{date.toLocaleDateString()}</div>
+            },
+        },
+        {
+            id: "actions",
+            cell: ({ row }) => {
+                const quiz = row.original
+
+                return (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Open menu</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem
+                                onClick={() => navigator.clipboard.writeText(quiz.id)}
+                            >
+                                Copy ID
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => window.location.href = `/dashboard/quizzes/edit/${quiz.id}`}>
+                                Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => window.location.href = `/dashboard/quizzes/preview/${quiz.id}`}>
+                                Preview
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive">
+                                Delete
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                )
+            },
+        },
+    ]
 
     const table = useReactTable({
         data: quizzes,
@@ -217,7 +217,6 @@ export default function Quizzes() {
             rowSelection,
         },
     })
-    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         let isMounted = true;

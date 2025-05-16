@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { User, registerUser } from "@/lib/db_user";
+import { registerUser } from "@/lib/db_user";
 import generatePassword from "@/lib/utils/pass_gen";
 import { Eye, EyeOff, Wand2 } from "lucide-react";
 import { z } from "zod";
@@ -112,9 +112,13 @@ export default function CreateUserPage() {
 
             toast.success("User created successfully!");
             router.push("/dashboard/users");
-        } catch (error: any) {
+        } catch (error) {
             console.error("Error creating user:", error);
-            toast.error(error.message || "Failed to create user");
+            if (error instanceof Error) {
+                toast.error(error.message);
+            } else {
+                toast.error("An unknown error occurred");
+            }
         } finally {
             setIsSubmitting(false);
         }
@@ -167,7 +171,7 @@ export default function CreateUserPage() {
                                                 <Input placeholder="John Doe" {...field} />
                                             </FormControl>
                                             <FormDescription>
-                                                The user's full name as displayed in the platform.
+                                                The user&apos;s full name as displayed in the platform.
                                             </FormDescription>
                                             <FormMessage />
                                         </FormItem>

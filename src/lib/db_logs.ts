@@ -14,7 +14,7 @@ import { collection, addDoc, getDocs, query, where, doc, getDoc } from "firebase
 
 export async function recordLog(log: Log) {
     try {
-        const docRef = await addDoc(collection(db, "logs"), log);
+        await addDoc(collection(db, "logs"), log);
     } catch (e) {
         console.error("Error adding log: ", e);
     }

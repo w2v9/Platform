@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/context/authContext"
 import { getUserById } from "@/lib/db_user"
 import { Loader2 } from "lucide-react"
 
+
 export default function Dashboard() {
     const { user, loading: authLoading } = useAuth()
     const router = useRouter()

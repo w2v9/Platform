@@ -53,7 +53,7 @@ const Navbar: React.FC = () => {
                     {user ? (
                         <DropdownMenuContent className="w-48" side="bottom" align="end">
                             <DropdownMenuItem>
-                                <CustomLink href={'/dashboard/home'} className="flex items-center">
+                                <CustomLink href={'/dashboard/'} className="flex items-center">
                                     <LayoutDashboard className="mr-2" />
                                     <span>Dashboard</span>
                                 </CustomLink>
@@ -61,14 +61,6 @@ const Navbar: React.FC = () => {
                             <DropdownMenuLabel>My Account</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             <DropdownMenuGroup>
-                                <DropdownMenuItem>
-                                    <UserIcon className="mr-2" />
-                                    <span>Profile</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                    <Settings className="mr-2" />
-                                    <span>Settings</span>
-                                </DropdownMenuItem>
                                 <DropdownMenuItem onClick={logout}>
                                     <LogOutIcon className="mr-2 text-red-400" />
                                     <span>Logout</span>

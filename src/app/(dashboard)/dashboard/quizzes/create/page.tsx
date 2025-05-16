@@ -152,7 +152,7 @@ export default function CreateQuizPage() {
                 return;
             }
 
-            const processedQuestions = data.questions.map((q: any) => {
+            const processedQuestions = data.questions.map((q: Question) => {
                 if (!q.question) {
                     throw new Error("Each question must have a 'question' field");
                 }
@@ -163,12 +163,12 @@ export default function CreateQuizPage() {
                     throw new Error("Each question must have at least 2 options");
                 }
 
-                const hasCorrectOption = q.options.some((opt: any) => opt.isCorrect === true);
+                const hasCorrectOption = q.options.some((opt: Option) => opt.isCorrect === true);
                 if (!hasCorrectOption) {
                     throw new Error(`Question "${q.question.substring(0, 20)}..." must have at least one correct option`);
                 }
 
-                const correctOption = q.options.find((opt: any) => opt.isCorrect === true);
+                const correctOption = q.options.find((opt: Option) => opt.isCorrect === true);
 
                 return {
                     id: q.id || uuidv4(),
@@ -178,14 +178,14 @@ export default function CreateQuizPage() {
                     questionAudio: q.questionAudio || "",
                     questionVideo: q.questionVideo || "",
                     questionType: q.questionType || "single-choice",
-                    options: q.options.map((opt: any) => ({
+                    options: q.options.map((opt: Option) => ({
                         id: opt.id || uuidv4(),
                         option: opt.option,
                         isCorrect: opt.isCorrect
                     })),
                     answer: {
-                        id: correctOption.id || uuidv4(),
-                        option: correctOption.option,
+                        id: correctOption?.id || uuidv4(),
+                        option: correctOption?.option,
                         isCorrect: true
                     }
                 };
@@ -243,7 +243,7 @@ export default function CreateQuizPage() {
                 })),
             };
 
-            let docref = await createQuiz(quizWithIds);
+            const docref = await createQuiz(quizWithIds);
 
             await recordLog({
                 id: uuidv4(),
@@ -682,7 +682,7 @@ export default function CreateQuizPage() {
                                                 onChange={(e) => setJsonData(e.target.value)}
                                             />
                                             <FormDescription>
-                                                Your JSON should contain a 'questions' array with each question having fields for 'question', 'explanation', and 'options'.
+                                                Your JSON should contain a &apos;questions&apos; array with each question having fields for &apos;question&apos;, &apos;explanation&apos;, and &apos;options&apos;.
                                             </FormDescription>
                                         </div>
                                     </CardContent>

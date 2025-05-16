@@ -17,8 +17,6 @@ import {
 import {
     Card,
     CardContent,
-    CardDescription,
-    CardFooter,
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
@@ -32,7 +30,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { AlertCircle, CalendarIcon, Clock, FileText, ListFilter, Loader2, Search, User as UserIcon, BookOpen } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -42,7 +40,6 @@ import {
     DropdownMenuContent,
     DropdownMenuGroup,
     DropdownMenuLabel,
-    DropdownMenuRadioItem,
     DropdownMenuSeparator,
     DropdownMenuSub,
     DropdownMenuSubContent,
@@ -60,9 +57,6 @@ import { format } from "date-fns";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/lib/config/firebase-config";
-import { ScrollArea } from "@radix-ui/react-scroll-area";
-import { ScrollBar } from "@/components/ui/scroll-area";
-
 
 export default function ResultsPage() {
     const { user } = useAuth();

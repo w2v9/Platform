@@ -47,10 +47,10 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { record, z } from "zod";
+import { z } from "zod";
 import { Resolver, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { doc, updateDoc, getDoc } from "firebase/firestore";
+import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/config/firebase-config";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -66,8 +66,8 @@ import { getQuizzes } from "@/lib/db_quiz";
 import { useAuth } from "@/lib/context/authContext";
 import { recordLog } from "@/lib/db_logs";
 import { v4 } from "uuid";
+import { Quiz } from "@/data/quiz";
 
-// Define the form schema for basic user info
 const userSchema = z.object({
     displayName: z.string().min(2, "Name must be at least 2 characters"),
     email: z.string().email("Please enter a valid email address"),
@@ -90,8 +90,7 @@ export default function EditUserPage({ params }: { params: Promise<{ id: string 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [activeTab, setActiveTab] = useState("profile");
-    const [availableQuizzes, setAvailableQuizzes] = useState<any[]>([]);
-    const [sessionDate, setSessionDate] = useState<Date | null>(null);
+    const [availableQuizzes, setAvailableQuizzes] = useState<Quiz[]>([]);
 
 
     const form = useForm<UserFormValues>({
@@ -566,7 +565,7 @@ export default function EditUserPage({ params }: { params: Promise<{ id: string 
                                                             </SelectContent>
                                                         </Select>
                                                         <FormDescription>
-                                                            Controls user's ability to access the platform
+                                                            Controls user&apos;s ability to access the platform
                                                         </FormDescription>
                                                         <FormMessage />
                                                     </FormItem>
@@ -740,7 +739,7 @@ export default function EditUserPage({ params }: { params: Promise<{ id: string 
                             <CardHeader>
                                 <CardTitle>Activity & Login History</CardTitle>
                                 <CardDescription>
-                                    View user's login history and activity
+                                    View user&apos;s login history and activity
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
@@ -836,7 +835,7 @@ export default function EditUserPage({ params }: { params: Promise<{ id: string 
                             <CardHeader>
                                 <CardTitle>Security Settings</CardTitle>
                                 <CardDescription>
-                                    Manage user's security settings and access
+                                    Manage user&apos;s security settings and access
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-6">

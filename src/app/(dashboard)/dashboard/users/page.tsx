@@ -36,23 +36,6 @@ import { ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 
-
-export const actionCards = [
-    {
-        title: "Create User",
-        description: "Create a new user",
-        icon: () => <UserPlus />,
-        action: '/dashboard/users/create',
-    },
-    {
-        title: "Edit User",
-        description: "Eid an existing user",
-        icon: () => <UserPen />,
-        action: '/dashboard/users/edit',
-    },
-]
-
-
 export default function UsersPage() {
     const router = useRouter();
     const [users, setUsers] = useState<User[]>([]);
@@ -66,7 +49,21 @@ export default function UsersPage() {
     const [quizAssignDialogOpen, setQuizAssignDialogOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
-    // Define table columns
+    const actionCards = [
+        {
+            title: "Create User",
+            description: "Create a new user",
+            icon: () => <UserPlus />,
+            action: '/dashboard/users/create',
+        },
+        {
+            title: "Edit User",
+            description: "Eid an existing user",
+            icon: () => <UserPen />,
+            action: '/dashboard/users/edit',
+        },
+    ]
+
     const columns: ColumnDef<User>[] = [
         {
             id: "select",
@@ -213,7 +210,6 @@ export default function UsersPage() {
         },
     ];
 
-    // Fetch users data
     useEffect(() => {
         const fetchUsers = async () => {
             setLoading(true);
@@ -266,7 +262,6 @@ export default function UsersPage() {
                 "metadata.updatedAt": new Date().toISOString()
             });
 
-            // Update local state
             setUsers(users.map(user =>
                 user.id === userId
                     ? { ...user, status: isBanned ? "banned" : "active" }
@@ -344,7 +339,6 @@ export default function UsersPage() {
                                     onClick={() => {
                                         setError(null);
                                         setLoading(true);
-                                        // Refetch users
                                         const fetchUsers = async () => {
                                             try {
                                                 const usersCollection = collection(db, "users");
@@ -413,12 +407,10 @@ export default function UsersPage() {
                                         <Button
                                             variant="outline"
                                             onClick={() => {
-                                                // Export selected users or all if none selected
                                                 const selectedUsers = Object.keys(rowSelection).length > 0
                                                     ? users.filter((_, index) => rowSelection[index as keyof typeof rowSelection])
                                                     : users;
 
-                                                // Create CSV
                                                 const headers = ["Name", "Email", "Role", "Last Login"];
                                                 const csvContent = [
                                                     headers.join(","),
@@ -432,7 +424,6 @@ export default function UsersPage() {
                                                     ].join(","))
                                                 ].join("\n");
 
-                                                // Download
                                                 const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
                                                 const url = URL.createObjectURL(blob);
                                                 const link = document.createElement("a");

@@ -20,18 +20,11 @@ import {
     DropdownMenu,
     DropdownMenuCheckboxItem,
     DropdownMenuContent,
-    DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
+
 import {
     Dialog,
     DialogContent,
@@ -41,7 +34,6 @@ import {
 } from "@/components/ui/dialog";
 import {
     ArrowUpDown,
-    ChevronDown,
     Download,
     Eye,
     Loader,
@@ -72,15 +64,13 @@ export default function LogsPage() {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [userId, setUserId] = useState<string>("");
 
-    // Table state
     const [sorting, setSorting] = useState<SortingState>([
-        { id: "timestamp", desc: true } // Default sort by timestamp descending
+        { id: "timestamp", desc: true }
     ]);
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
     const [rowSelection, setRowSelection] = useState({});
 
-    // Define columns
     const columns: ColumnDef<Log>[] = [
         {
             accessorKey: "timestamp",
@@ -166,7 +156,6 @@ export default function LogsPage() {
         },
     ];
 
-    // Helper function to determine badge variant based on action
     function getBadgeVariant(action: string): "default" | "destructive" | "outline" | "secondary" {
         if (action.includes("login") || action.includes("LOGIN")) return "default";
         if (action.includes("create") || action.includes("CREATE")) return "secondary";
@@ -175,7 +164,6 @@ export default function LogsPage() {
         return "outline";
     }
 
-    // Fetch logs data
     useEffect(() => {
         async function fetchLogs() {
             setLoading(true);
@@ -197,7 +185,6 @@ export default function LogsPage() {
         fetchLogs();
     }, [userId]);
 
-    // Initialize table
     const table = useReactTable({
         data: logs,
         columns,
@@ -217,14 +204,11 @@ export default function LogsPage() {
         },
     });
 
-    // Export logs to CSV
     const exportToCSV = () => {
-        // Filter for selected rows, or use all if none selected
         const dataToExport = Object.keys(rowSelection).length > 0
             ? logs.filter((_, index) => rowSelection[index as keyof typeof rowSelection])
             : logs;
 
-        // Create CSV content
         const headers = ["Timestamp", "User ID", "Action", "Details"];
         const csvContent = [
             headers.join(","),
@@ -236,7 +220,6 @@ export default function LogsPage() {
             ].join(","))
         ].join("\n");
 
-        // Trigger download
         const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");

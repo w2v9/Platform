@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/context/authContext";
-import { User, getUserById, UserStatus, UserStatusColor } from "@/lib/db_user";
+import { User, getUserById, UserStatusColor } from "@/lib/db_user";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { updateDoc, doc } from "firebase/firestore";
@@ -9,7 +9,6 @@ import { updateProfile } from "firebase/auth";
 import { db, auth } from "@/lib/config/firebase-config";
 import { format } from "date-fns";
 
-// Shadcn UI components
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -18,14 +17,14 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Globe, Calendar, Mail, Phone, AtSign, User as UserIcon, Shield, GraduationCap } from "lucide-react";
+import { Loader2, Globe, Calendar, Mail, Shield, GraduationCap } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { SidebarInset, SidebarSeparator, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 
-// Status colors mapping
+
 const statusColors: UserStatusColor = {
     active: "bg-green-500",
     inactive: "bg-gray-500",
@@ -515,7 +514,7 @@ export default function ProfilePage() {
                                 ) : (
                                     <div className="text-center py-8">
                                         <GraduationCap className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                                        <p className="text-muted-foreground">You don't have access to any quizzes yet</p>
+                                        <p className="text-muted-foreground">You don&apos;t have access to any quizzes yet</p>
                                         <Button
                                             variant="outline"
                                             className="mt-4"

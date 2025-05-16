@@ -17,6 +17,12 @@ import { z } from "zod"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { loginUser } from "@/lib/db_user"
+import { Metadata } from "next"
+
+const metadata: Metadata = {
+    title: "Login - AzoozGAT Platform",
+    description: "Login to your account to access the AzoozGAT Platform.",
+}
 
 const formSchema = z.object({
     email: z.string().min(1, { message: "Email is required" }).email({ message: "Invalid email address" }),

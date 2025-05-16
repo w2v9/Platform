@@ -17,9 +17,6 @@ import { useRouter } from "next/navigation";
 
 import { useEffect } from "react";
 import { useState } from "react";
-
-import { ActionCard } from "@/components/ActionCard";
-import { FilePlus, SquarePen, Settings2 } from "lucide-react";
 import { Question, Quiz } from "@/data/quiz";
 import { getQuizzes } from "@/lib/db_quiz";
 
@@ -35,7 +32,7 @@ import {
     getSortedRowModel,
     useReactTable,
 } from "@tanstack/react-table"
-import { ArrowUpDown, ChevronDown, MoreHorizontal } from "lucide-react"
+import { ArrowUpDown, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
@@ -52,23 +49,18 @@ import {
     DropdownMenu,
     DropdownMenuCheckboxItem,
     DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
 import {
     Card,
     CardContent,
-    CardDescription,
     CardHeader,
     CardTitle,
 } from "@/components/ui/card"
 
-import { toast, ToastT } from "sonner";
+import { toast } from "sonner";
 import Link from "next/link";
-
 
 const columns: ColumnDef<Quiz>[] = [
     {

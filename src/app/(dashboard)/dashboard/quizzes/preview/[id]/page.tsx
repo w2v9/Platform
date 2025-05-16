@@ -1,5 +1,4 @@
 'use client';
-import QuizUI from "@/components/Quiz";
 import { getQuizById } from "@/lib/db_quiz";
 import { Loader } from "lucide-react";
 import Image from "next/image";
@@ -15,37 +14,13 @@ import {
 import { Progress } from "@/components/ui/progress"
 import { Clock, FlagIcon, MoveLeft, MoveRight } from "lucide-react";
 import { useState, useEffect, useCallback, use } from "react";
-import { ScrollArea } from "@/components/ui/scroll-area"; // Fix import path
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Toggle } from "@/components/ui/toggle";
 import { useMediaQuery } from "@/components/hooks/useMediaQuary";
-import { useAuth } from "@/lib/context/authContext";
-import { createReport, QuizReport } from "@/lib/utils/db_reports";
 import { toast } from "sonner";
-import { recordLog } from "@/lib/db_logs";
-import { v4 } from "uuid";
-import { useRouter } from "next/navigation";
 
-export function QustionCard({ index, currentIndex, setCurentIndex, markedForReview, answerSelected }: {
-    index: number,
-    currentIndex: number,
-    setCurentIndex: (index: number) => void,
-    markedForReview?: boolean,
-    answerSelected?: boolean
-}) {
-    return (
-        <Button
-            variant={index === currentIndex ? "default" : `outline`}
-            className={`w-10 h-10 flex items-center justify-center rounded-full ${markedForReview ? "ring-2 ring-yellow-400" : ""} ${answerSelected ? "bg-primary text-white" : ""}`}
-            disabled={index === currentIndex}
-            onClick={() => setCurentIndex(index)}
-        >
-            {index + 1}
-            {markedForReview && <span className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full"></span>}
-        </Button>
-    );
-}
 
-export function QustionCard2({ index, setCurentIndex, markedForReview, answer, isHardMode }: {
+function QustionCard2({ index, setCurentIndex, markedForReview, answer, isHardMode }: {
     index: number,
     setCurentIndex: (index: number) => void,
     markedForReview?: boolean,
@@ -73,13 +48,6 @@ export function QustionCard2({ index, setCurentIndex, markedForReview, answer, i
     )
 }
 
-const formatTime = (seconds: number): string => {
-    if (seconds <= 0) return "00:00";
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
-};
-
 interface FormQuestionData {
     index: number;
     answer: string | null;
@@ -91,30 +59,31 @@ type FormData = FormQuestionData[]
 export default function QuizPage({ params }: { params: Promise<{ id: string }> }) {
     const unwrappedParams = use(params);
     const quizId = unwrappedParams.id;
-    const [quizData, setQuizData] = useState<Quiz | null>(null); // Initialize as null
-    const router = useRouter(); // Move useRouter outside of callbacks
-
+    const [quizData, setQuizData] = useState<Quiz | null>(null);
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [formData, setFormData] = useState<FormData>([]);
-    const { user } = useAuth();
-    const [timeRemaining, setTimeRemaining] = useState<number>(0); // Initialize with 0
+    const [timeRemaining, setTimeRemaining] = useState<number>(0);
     const [isTimerExpired, setIsTimerExpired] = useState<boolean>(false);
     const isDesktop = useMediaQuery("(min-width: 768px)");
 
-    // Fetch quiz data
+    const formatTime = (seconds: number): string => {
+        if (seconds <= 0) return "00:00";
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = seconds % 60;
+        return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+    };
+
     useEffect(() => {
         const fetchQuiz = async () => {
             try {
                 const quiz = await getQuizById(quizId);
                 if (quiz) {
                     setQuizData(quiz);
-                    // Initialize form data after quiz is loaded
                     setFormData(quiz.questions.map((_, index) => ({
                         index,
                         answer: null,
                         markedForReview: false,
                     })));
-                    // Initialize timer after quiz is loaded
                     setTimeRemaining((quiz.timeLimit || 30) * 60);
                 } else {
                     toast.error("Quiz not found");
@@ -127,7 +96,6 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
 
         fetchQuiz();
 
-        // Security measures
         const handleContextMenu = (e: MouseEvent) => {
             e.preventDefault();
             toast.error("Right-clicking is disabled during the quiz");
@@ -162,9 +130,8 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
         };
     }, [quizId]);
 
-    // Timer effect
     useEffect(() => {
-        if (!quizData) return; // Don't start timer if no quiz data
+        if (!quizData) return;
 
         if (timeRemaining <= 0) {
             setIsTimerExpired(true);
@@ -178,7 +145,6 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
         return () => clearInterval(timer);
     }, [timeRemaining, quizData]);
 
-    // Handle timer expiration
     useEffect(() => {
         if (timeRemaining <= 0 && !isTimerExpired && quizData) {
             setIsTimerExpired(true);
@@ -186,7 +152,6 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
         }
     }, [timeRemaining, isTimerExpired, quizData]);
 
-    // Scroll lock effect
     useEffect(() => {
         document.body.style.overflow = 'hidden';
         return () => {
@@ -194,7 +159,6 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
         };
     }, []);
 
-    // Handlers
     const handleSingleChoiceToggle = useCallback((answer: string) => {
         setFormData(prev => prev.map(item => {
             if (item.index === currentQuestionIndex) {

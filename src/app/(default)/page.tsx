@@ -2,6 +2,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import CustomLink from "@/components/Link";
 
+
 export default function Home() {
 
   return (

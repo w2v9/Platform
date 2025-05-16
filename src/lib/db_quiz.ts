@@ -2,12 +2,11 @@ import { db } from "./config/firebase-config";
 import { addDoc, collection, doc, getDocs, query, updateDoc, where, getDoc } from "firebase/firestore";
 import type { Quiz } from "@/data/quiz";
 
-// Use a consistent collection name constant
-const COLLECTION_NAME = "quiz"; // Keep this as "quiz" since your existing data is there
+const COLLECTION_NAME = "quiz";
 
 export async function getQuizzes() {
     const quizzesRef = collection(db, COLLECTION_NAME);
-    let quizzes: Quiz[] = [];
+    const quizzes: Quiz[] = [];
     const querySnapshot = await getDocs(quizzesRef);
     querySnapshot.forEach((doc) => {
         quizzes.push(doc.data() as Quiz);

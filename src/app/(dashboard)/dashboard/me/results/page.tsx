@@ -1,8 +1,8 @@
 "use client"
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/context/authContext";
-import { getAllReports, getReportsByUserId, QuizReport, QuizReports } from "@/lib/utils/db_reports";
-import { getUserById, User } from "@/lib/db_user";
+import { getReportsByUserId, QuizReport, QuizReports } from "@/lib/utils/db_reports";
+import { User } from "@/lib/db_user";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -17,8 +17,6 @@ import {
 import {
     Card,
     CardContent,
-    CardDescription,
-    CardFooter,
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
@@ -32,7 +30,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { AlertCircle, CalendarIcon, Clock, FileText, ListFilter, Loader2, Search, User as UserIcon, BookOpen } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -42,7 +40,6 @@ import {
     DropdownMenuContent,
     DropdownMenuGroup,
     DropdownMenuLabel,
-    DropdownMenuRadioItem,
     DropdownMenuSeparator,
     DropdownMenuSub,
     DropdownMenuSubContent,
@@ -58,7 +55,6 @@ import {
 } from "@/components/ui/select";
 import { format } from "date-fns";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-
 
 export default function ResultsPage() {
     const { user } = useAuth();
@@ -115,7 +111,7 @@ export default function ResultsPage() {
         }
 
         fetchReports();
-    }, [user]);
+    }, [user, userData]);
 
     useEffect(() => {
         const applyFilters = () => {
