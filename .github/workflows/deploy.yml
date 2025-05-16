@@ -10,7 +10,8 @@ jobs:
     steps:
       - name: Cleanup
         run: |
-          sudo -n rm -rf /actions-runner/_work/AzoozGAT-Platform/AzoozGAT-Platform || true
+          sudo -n rm -rf /actions-runner/_work/AzoozGAT-Platform/AzoozGAT-Platform/.next/ || true
+          sudo -n rm -rf /actions-runner/_work/AzoozGAT-Platform/AzoozGAT-Platform/node_modules/ || true
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
