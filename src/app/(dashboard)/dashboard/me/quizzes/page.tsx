@@ -141,7 +141,7 @@ const columns: ColumnDef<Quiz>[] = [
             return (
                 <Button variant="primary" asChild
                 >
-                    <Link href={`/quiz  /${quiz.id}`}>
+                    <Link href={`/quiz/${quiz.id}`}>
                         <span className="sr-only">Start quiz</span>
                         <PlayIcon className="h-4 w-4" />
                         <span>Start quiz</span>
