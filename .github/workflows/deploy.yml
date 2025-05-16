@@ -33,7 +33,7 @@ jobs:
           sudo -n npm install -g pm2
           pm2 stop platform-azoozgat || true
           pm2 delete platform-azoozgat || true
-          NODE_ENV=production pm2 start npm --name "platform-azoozgat" --cwd "$PWD" -- start
+          NODE_ENV=production pm2 start npm --name "platform-azoozgat" --cwd "/actions-runner/_work/AzoozGAT-Platform/AzoozGAT-Platform" -- start
           pm2 save
           sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u root --hp $HOME || true
       
