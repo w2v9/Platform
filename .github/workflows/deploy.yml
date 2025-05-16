@@ -33,8 +33,10 @@ jobs:
           sudo -n npm install -g pm2
           pm2 stop platform-azoozgat || true
           pm2 delete platform-azoozgat || true
-          pm2 start npm --name "platform-azoozgat" -- start
+          # Start with production mode
+          NODE_ENV=production pm2 start npm --name "platform-azoozgat" -- start
           pm2 save
+          sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u root --hp $HOME || true
       
       - name: Configure Nginx
         run: |
