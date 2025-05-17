@@ -218,7 +218,7 @@ export default function Quizzes() {
                 <Breadcrumb>
                     <BreadcrumbList>
                         <BreadcrumbItem className="hidden md:block">
-                            <BreadcrumbLink href="/dashboard/home">
+                            <BreadcrumbLink href="/dashboard/">
                                 Dashboard
                             </BreadcrumbLink>
                         </BreadcrumbItem>

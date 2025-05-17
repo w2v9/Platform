@@ -132,7 +132,7 @@ export default function ProfilePage() {
                     <Breadcrumb>
                         <BreadcrumbList>
                             <BreadcrumbItem>
-                                <BreadcrumbLink href="/dashboard/home">Dashboard</BreadcrumbLink>
+                                <BreadcrumbLink href="/dashboard/">Dashboard</BreadcrumbLink>
                             </BreadcrumbItem>
                             <BreadcrumbSeparator />
                             <BreadcrumbItem>
@@ -161,7 +161,7 @@ export default function ProfilePage() {
                 <Breadcrumb>
                     <BreadcrumbList>
                         <BreadcrumbItem>
-                            <BreadcrumbLink href="/dashboard/home">Dashboard</BreadcrumbLink>
+                            <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
                         </BreadcrumbItem>
                         <BreadcrumbSeparator />
                         <BreadcrumbItem>

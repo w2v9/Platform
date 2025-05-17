@@ -1,9 +1,22 @@
+'use client'
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import CustomLink from "@/components/Link";
+import { useAuth } from "@/lib/context/authContext";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 
 export default function Home() {
+  const { user } = useAuth();
+  const router = useRouter();
+
+
+  useEffect(() => {
+    if (user) {
+      router.push('/dashboard')
+    };
+  }, [user]);
 
   return (
     <div className="flex flex-row md:flex-col lg:flex-col items-center justify-between p-8 md:p-16 lg:p-24">

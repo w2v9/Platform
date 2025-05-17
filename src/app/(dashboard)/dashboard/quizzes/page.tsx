@@ -20,7 +20,7 @@ import { useState } from "react";
 import { ActionCard } from "@/components/ActionCard";
 import { FilePlus, SquarePen, Settings2 } from "lucide-react";
 import { Question, Quiz } from "@/data/quiz";
-import { getQuizzes } from "@/lib/db_quiz";
+import { deleteQuiz, getQuizzes } from "@/lib/db_quiz";
 
 import {
     ColumnDef,
@@ -66,6 +66,9 @@ import {
 } from "@/components/ui/card"
 
 import { toast } from "sonner";
+import { recordLog } from "@/lib/db_logs";
+import { v4 } from "uuid";
+import { useAuth } from "@/lib/context/authContext";
 
 
 export default function Quizzes() {
@@ -75,6 +78,7 @@ export default function Quizzes() {
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
     const [rowSelection, setRowSelection] = useState({})
     const [loading, setLoading] = useState(true);
+    const { user } = useAuth();
 
     const actionCards = [
         {
@@ -189,7 +193,7 @@ export default function Quizzes() {
                             <DropdownMenuItem onClick={() => window.location.href = `/dashboard/quizzes/preview/${quiz.id}`}>
                                 Preview
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive">
+                            <DropdownMenuItem className="text-destructive" onClick={handleDeleteQuiz(quiz.id)}>
                                 Delete
                             </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -217,6 +221,33 @@ export default function Quizzes() {
             rowSelection,
         },
     })
+
+    const handleDeleteQuiz = (id: string) => {
+        return async () => {
+            try {
+                await deleteQuiz(id);
+                toast.success("Quiz deleted successfully");
+                await recordLog({
+                    id: v4(),
+                    userId: user?.uid || "admin",
+                    action: "DELETE_QUIZ",
+                    details: `Quiz with ID ${id} deleted`,
+                    timestamp: new Date().toISOString(),
+                });
+                setQuizzes((prevQuizzes) => prevQuizzes.filter((quiz) => quiz.id !== id));
+            } catch (error) {
+                const erorMsg = error as Error;
+                toast.error("Error deleting quiz: " + erorMsg);
+                await recordLog({
+                    id: v4(),
+                    userId: user?.uid || "admin",
+                    action: "ERROR",
+                    details: `Error deleting quiz with ID ${id}: ${erorMsg}`,
+                    timestamp: new Date().toISOString(),
+                });
+            }
+        };
+    };
 
     useEffect(() => {
         let isMounted = true;

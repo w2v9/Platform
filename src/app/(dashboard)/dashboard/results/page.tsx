@@ -334,7 +334,7 @@ export default function ResultsPage() {
                 <Breadcrumb>
                     <BreadcrumbList>
                         <BreadcrumbItem>
-                            <BreadcrumbLink href="/dashboard/home">Dashboard</BreadcrumbLink>
+                            <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
                         </BreadcrumbItem>
                         <BreadcrumbSeparator />
                         <BreadcrumbItem>

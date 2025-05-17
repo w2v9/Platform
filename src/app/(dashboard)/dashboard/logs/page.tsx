@@ -53,7 +53,7 @@ import {
     useReactTable,
 } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
 
 export default function LogsPage() {
@@ -434,7 +434,7 @@ export default function LogsPage() {
 
             {/* Log Details Dialog */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="sm:max-w-xl">
+                <DialogContent className="sm:max-w-xl max-w-[95vw] p-4 sm:p-6">
                     <DialogHeader>
                         <DialogTitle>Log Details</DialogTitle>
                         <DialogDescription>
@@ -443,35 +443,42 @@ export default function LogsPage() {
                     </DialogHeader>
 
                     {selectedLog && (
-                        <div className="space-y-4">
-                            <div className="grid grid-cols-3 gap-4">
+                        <div className="space-y-4 overflow-hideen">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4">
                                 <div className="col-span-1 font-medium">Timestamp</div>
-                                <div className="col-span-2">
+                                <div className="col-span-1 sm:col-span-2">
                                     {format(new Date(selectedLog.timestamp), "PPpp")}
                                 </div>
 
                                 <div className="col-span-1 font-medium">User ID</div>
-                                <div className="col-span-2 break-all">{selectedLog.userId}</div>
+                                <div className="col-span-1 sm:col-span-2 break-all text-sm sm:text-base">
+                                    {selectedLog.userId}
+                                </div>
 
                                 <div className="col-span-1 font-medium">Action</div>
-                                <div className="col-span-2">
+                                <div className="col-span-1 sm:col-span-2">
                                     <Badge variant={getBadgeVariant(selectedLog.action)}>
                                         {selectedLog.action}
                                     </Badge>
                                 </div>
 
                                 <div className="col-span-1 font-medium">Log ID</div>
-                                <div className="col-span-2 break-all">{selectedLog.id}</div>
+                                <div className="col-span-1 sm:col-span-2 break-all text-sm sm:text-base">
+                                    {selectedLog.id}
+                                </div>
                             </div>
 
                             <Separator />
 
-                            <div>
+                            <div className="space-y-2">
                                 <div className="font-medium mb-2">Details</div>
-                                <ScrollArea className="h-[200px] w-full rounded-md border p-4">
-                                    <pre className="text-sm whitespace-pre-wrap">
-                                        {selectedLog.details}
-                                    </pre>
+                                <ScrollArea className="w-[85vw] md:w-lg rounded-md border p-4">
+                                    <div>
+                                        <pre className="text-sm sm:text-base whitespace-pre-wrap break-words">
+                                            {selectedLog.details}
+                                        </pre>
+                                    </div>
+                                    <ScrollBar orientation="horizontal" />
                                 </ScrollArea>
                             </div>
                         </div>

@@ -184,7 +184,7 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
             });
             toast.dismiss();
             toast.success("Quiz report saved successfully!");
-            router.push("/dashboard/reports");
+            router.push("/dashboard/me/results");
         } catch (error) {
             console.error("Error saving quiz report:", error);
             let errorMessage = "An error occurred while saving the quiz report.";
@@ -223,7 +223,7 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
     }, []);
 
     return (
-        <div className="flex flex-col h-screen fixed inset-0 overflow-hidden">
+        <div className="flex flex-col h-screen fixed inset-0">
             <div id="header" className="flex-shrink-0 p-4 bg-white shadow-sm">
                 <div className="flex flex-row items-center justify-between">
                     <div className="flex items-center justify-start">
@@ -277,7 +277,7 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
                             direction={isDesktop ? "horizontal" : "vertical"}
                             className="h-full rounded-lg border"
                         >
-                            <ResizablePanel defaultSize={50}>
+                            <ResizablePanel defaultSize={40}>
                                 <div className="flex h-full items-center justify-center p-6">
                                     <ScrollArea className="h-full w-full">
                                         <h2 className="font-bold">Explanation:</h2>

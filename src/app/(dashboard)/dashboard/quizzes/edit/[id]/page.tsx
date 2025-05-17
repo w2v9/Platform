@@ -310,7 +310,7 @@ export default function EditQuizPage({ params }: { params: Promise<{ id: string 
                     <Breadcrumb>
                         <BreadcrumbList>
                             <BreadcrumbItem className="hidden md:block">
-                                <BreadcrumbLink href="/dashboard/home">
+                                <BreadcrumbLink href="/dashboard/admin">
                                     Dashboard
                                 </BreadcrumbLink>
                             </BreadcrumbItem>
