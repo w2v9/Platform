@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { registerUser } from "@/lib/db_user";
+import { registerUser, User } from "@/lib/db_user";
 import generatePassword from "@/lib/utils/pass_gen";
 import { Eye, EyeOff, Wand2 } from "lucide-react";
 import { z } from "zod";
@@ -93,11 +93,24 @@ export default function CreateUserPage() {
     const onSubmit = async (data: FormValues) => {
         try {
             setIsSubmitting(true);
+            const userData: User = {
+                id: "",
+                displayName: data.displayName,
+                email: data.email,
+                username: data.username,
+                phone: data.phone,
+                role: data.role,
+                status: "inactive",
+                metadata: {
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                },
+                quizResults: [],
+            }
 
             await registerUser(
-                data.email,
+                userData,
                 data.password,
-                data.displayName
             );
 
             if (user?.uid) {

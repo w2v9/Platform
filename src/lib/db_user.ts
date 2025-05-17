@@ -60,12 +60,12 @@ export type QuizReport = Array<{
     maxScore: number;
     percentageScore: number;
     dateTaken: string;
-    completionTime: number; // in minutes
+    completionTime: number;
     answers: Array<{
         questionId: string;
         selectedOptionIds: string[];
         isCorrect: boolean;
-        timeTaken: number; // in minutes
+        timeTaken: number;
     }>;
 }>;
 
@@ -79,23 +79,24 @@ export type User = {
     role: "user" | "admin";
     status?: "inactive" | "active" | "warned" | "banned";
     metadata: Metadata
-    quizAccess: Record<string, {
-        grantedAt: string;
-        expiresAt?: string;
-    }>;
     quizResults: QuizReport;
 };
 
-export async function registerUser(email: string, password: string, displayName: string) {
+
+export async function registerUser(data: User, password: string) {
     try {
 
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const userCredential = await createUserWithEmailAndPassword(auth, data.email, password);
         const user = userCredential.user;
 
-        await updateProfile(user, { displayName });
+        const { displayName, email } = data;
 
+        await updateProfile(user, {
+            displayName: data.displayName,
+        });
 
         const userData: User = {
+            ...data,
             id: user.uid,
             displayName,
             email,
@@ -105,11 +106,14 @@ export async function registerUser(email: string, password: string, displayName:
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
             },
-            quizAccess: {},
             quizResults: []
         };
 
         await setDoc(doc(db, "users", user.uid), userData);
+
+        auth.signOut();
+
+        loginUser('admin@azoozgat.com', '[7|jA#vL]0O%');
 
         return userData;
     } catch (error) {

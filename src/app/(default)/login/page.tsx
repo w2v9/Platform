@@ -17,12 +17,10 @@ import { z } from "zod"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { loginUser } from "@/lib/db_user"
-import { Metadata } from "next"
+import { useAuth } from "@/lib/context/authContext"
+import { useEffect } from "react"
 
-const metadata: Metadata = {
-    title: "Login - AzoozGAT Platform",
-    description: "Login to your account to access the AzoozGAT Platform.",
-}
+
 
 const formSchema = z.object({
     email: z.string().min(1, { message: "Email is required" }).email({ message: "Invalid email address" }),
@@ -31,6 +29,13 @@ const formSchema = z.object({
 
 export default function LoginPage() {
     const router = useRouter()
+    const { user } = useAuth()
+
+    useEffect(() => {
+        if (user) {
+            router.push("/dashboard")
+        }
+    }, [user, router])
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),

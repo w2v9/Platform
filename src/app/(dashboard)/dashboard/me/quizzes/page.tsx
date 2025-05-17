@@ -62,95 +62,7 @@ import {
 import { toast } from "sonner";
 import Link from "next/link";
 
-const columns: ColumnDef<Quiz>[] = [
-    {
-        id: "select",
-        header: ({ table }) => (
-            <Checkbox
-                checked={
-                    table.getIsAllPageRowsSelected() ||
-                    (table.getIsSomePageRowsSelected() && "indeterminate")
-                }
-                onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                aria-label="Select all"
-            />
-        ),
-        cell: ({ row }) => (
-            <Checkbox
-                checked={row.getIsSelected()}
-                onCheckedChange={(value) => row.toggleSelected(!!value)}
-                aria-label="Select row"
-            />
-        ),
-        enableSorting: false,
-        enableHiding: false,
-    },
-    {
-        accessorKey: "title",
-        header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                >
-                    Title
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            )
-        },
-        cell: ({ row }) => <div className="font-medium">{row.getValue("title")}</div>,
-    },
-    {
-        accessorKey: "timeLimit",
-        header: "Time Limit",
-        cell: ({ row }) => (
-            <div>{row.getValue("timeLimit")} minutes</div>
-        ),
-    },
-    {
-        accessorKey: "questions",
-        header: "Questions",
-        cell: ({ row }) => {
-            const questions = row.getValue("questions") as Question[]
-            return <div>{questions.length} questions</div>
-        },
-    },
-    {
-        accessorKey: "createdAt",
-        header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                >
-                    Created
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            )
-        },
-        cell: ({ row }) => {
-            const date = new Date(row.getValue("createdAt"))
-            return <div>{date.toLocaleDateString()}</div>
-        },
-    },
-    {
-        id: "actions",
-        cell: ({ row }) => {
-            const quiz = row.original
 
-            return (
-                <Button variant="primary" asChild
-                >
-                    <Link href={`/quiz/${quiz.id}`}>
-                        <span className="sr-only">Start quiz</span>
-                        <PlayIcon className="h-4 w-4" />
-                        <span>Start quiz</span>
-                    </Link>
-                </Button>
-            )
-        },
-    },
-]
 
 export default function Quizzes() {
     const [quizzes, setQuizzes] = useState<Quiz[]>([]);
@@ -159,6 +71,96 @@ export default function Quizzes() {
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
     const [rowSelection, setRowSelection] = useState({})
     const router = useRouter()
+
+    const columns: ColumnDef<Quiz>[] = [
+        {
+            id: "select",
+            header: ({ table }) => (
+                <Checkbox
+                    checked={
+                        table.getIsAllPageRowsSelected() ||
+                        (table.getIsSomePageRowsSelected() && "indeterminate")
+                    }
+                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                    aria-label="Select all"
+                />
+            ),
+            cell: ({ row }) => (
+                <Checkbox
+                    checked={row.getIsSelected()}
+                    onCheckedChange={(value) => row.toggleSelected(!!value)}
+                    aria-label="Select row"
+                />
+            ),
+            enableSorting: false,
+            enableHiding: false,
+        },
+        {
+            accessorKey: "title",
+            header: ({ column }) => {
+                return (
+                    <Button
+                        variant="ghost"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                    >
+                        Title
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                )
+            },
+            cell: ({ row }) => <div className="font-medium">{row.getValue("title")}</div>,
+        },
+        {
+            accessorKey: "timeLimit",
+            header: "Time Limit",
+            cell: ({ row }) => (
+                <div>{row.getValue("timeLimit")} minutes</div>
+            ),
+        },
+        {
+            accessorKey: "questions",
+            header: "Questions",
+            cell: ({ row }) => {
+                const questions = row.getValue("questions") as Question[]
+                return <div>{questions.length} questions</div>
+            },
+        },
+        {
+            accessorKey: "createdAt",
+            header: ({ column }) => {
+                return (
+                    <Button
+                        variant="ghost"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                    >
+                        Created
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                )
+            },
+            cell: ({ row }) => {
+                const date = new Date(row.getValue("createdAt"))
+                return <div>{date.toLocaleDateString()}</div>
+            },
+        },
+        {
+            id: "actions",
+            cell: ({ row }) => {
+                const quiz = row.original
+
+                return (
+                    <Button variant="primary"
+                        className="flex items-center gap-2"
+                        onClick={() => router.push(`/quiz/${quiz.id}`)}
+                    >
+                        <span className="sr-only">Start quiz</span>
+                        <PlayIcon className="h-4 w-4" />
+                        <span>Start quiz</span>
+                    </Button>
+                )
+            },
+        },
+    ]
 
     const table = useReactTable({
         data: quizzes,

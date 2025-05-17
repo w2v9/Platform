@@ -39,3 +39,5 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+src/data/azoozgat-platform-firebase-adminsdk-fbsvc-5ced0eefb9.json
+src/lib/frebase/admin.ts
