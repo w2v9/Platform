@@ -178,7 +178,6 @@ export default function ProfilePage() {
                         <TabsTrigger value="overview">Overview</TabsTrigger>
                         <TabsTrigger value="edit">Edit Profile</TabsTrigger>
                         <TabsTrigger value="history">Login History</TabsTrigger>
-                        <TabsTrigger value="quizzes">Quiz Access</TabsTrigger>
                     </TabsList>
 
                     {/* Overview Tab */}
@@ -466,64 +465,6 @@ export default function ProfilePage() {
                                         </div>
                                     )}
                                 </ScrollArea>
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-
-                    {/* Quiz Access Tab */}
-                    <TabsContent value="quizzes">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Quiz Access</CardTitle>
-                                <CardDescription>Quizzes you have access to</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                {Object.keys(userData.quizAccess || {}).length > 0 ? (
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>Quiz ID</TableHead>
-                                                <TableHead>Access Granted</TableHead>
-                                                <TableHead>Expires</TableHead>
-                                                <TableHead>Status</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {Object.entries(userData.quizAccess).map(([quizId, access]) => {
-                                                const isExpired = access.expiresAt && new Date(access.expiresAt) < new Date();
-
-                                                return (
-                                                    <TableRow key={quizId}>
-                                                        <TableCell className="font-medium">{quizId}</TableCell>
-                                                        <TableCell>
-                                                            {format(new Date(access.grantedAt), "PPp")}
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            {access.expiresAt ? format(new Date(access.expiresAt), "PPp") : "Never"}
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            <Badge variant={isExpired ? "destructive" : "default"}>
-                                                                {isExpired ? "Expired" : "Active"}
-                                                            </Badge>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                );
-                                            })}
-                                        </TableBody>
-                                    </Table>
-                                ) : (
-                                    <div className="text-center py-8">
-                                        <GraduationCap className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                                        <p className="text-muted-foreground">You don&apos;t have access to any quizzes yet</p>
-                                        <Button
-                                            variant="outline"
-                                            className="mt-4"
-                                            onClick={() => router.push("/dashboard/me/quizzes")}
-                                        >
-                                            Browse Available Quizzes
-                                        </Button>
-                                    </div>
-                                )}
                             </CardContent>
                         </Card>
                     </TabsContent>

@@ -74,9 +74,7 @@ export default function Page() {
         setReports(reportsData);
 
         const quizzesData = await getQuizzes();
-        setQuizzes(quizzesData);
-
-        // Fetch logs data with ordering
+        setQuizzes(quizzesData)
         const logsCollection = collection(db, "logs");
         const logsQuery = query(logsCollection, orderBy("timestamp", "desc"), limit(100));
         const logsSnapshot = await getDocs(logsQuery);
@@ -349,7 +347,11 @@ export default function Page() {
                                   <h4 className="text-sm font-medium mb-1">Details</h4>
                                   <pre className="mt-2 w-full rounded-md bg-slate-950 p-4 overflow-x-auto">
                                     <code className="text-white text-xs">
-                                      {JSON.stringify(JSON.parse(selectedLog.details), null, 2)}
+                                      { // if plain text, show it as is
+                                        selectedLog.details && !selectedLog.details.startsWith('{') &&
+                                          selectedLog.details && !selectedLog.details.startsWith('[') ? (
+                                          selectedLog.details
+                                        ) : JSON.stringify(JSON.parse(selectedLog.details), null, 2)}
                                     </code>
                                   </pre>
                                 </div>

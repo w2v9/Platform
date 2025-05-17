@@ -117,8 +117,16 @@ export default function CreateUserPage() {
                 await recordLog({
                     id: v4(),
                     userId: user.uid,
-                    action: "create_user",
-                    details: `Created user ${data.displayName} (${data.email})`,
+                    action: "CREATE_USER",
+                    details: JSON.stringify({
+                        userId: userData.id,
+                        displayName: userData.displayName,
+                        email: userData.email,
+                        role: userData.role,
+                        status: userData.status,
+                        createdAt: userData.metadata.createdAt,
+                        updatedAt: userData.metadata.updatedAt,
+                    }),
                     timestamp: new Date().toISOString(),
                 })
             }
