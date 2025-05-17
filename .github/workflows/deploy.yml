@@ -103,15 +103,10 @@ jobs:
           EOF
           
           # Reload Caddy to apply new configuration
+
           sudo -n systemctl reload caddy
           sudo -n systemctl restart caddy || true
-      
-      - name: Disable Nginx if installed
-        run: |
-          if command -v nginx &> /dev/null; then
-            sudo -n systemctl disable nginx
-            sudo -n systemctl stop nginx
-          fi
+    
           
       - name: Verify Caddy is running
         run: |
