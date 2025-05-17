@@ -12,7 +12,7 @@ jobs:
         run: |
           sudo -n pm2 stop platform-azoozgat || true
           sudo -n pm2 delete platform-azoozgat || true
-          sudo -n rm -rf /actions-runner/_work/AzoozGAT-Platform/AzoozGAT-Platform/*
+          sudo -n rm -rf /actions-runner/_work/AzoozGAT-Platform/AzoozGAT-Platform/.next
 
       - uses: actions/checkout@v3
         with:
