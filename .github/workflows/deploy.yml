@@ -64,6 +64,7 @@ jobs:
           sudo -n cp ./nginx/platform-azoozgat.conf /etc/nginx/sites-available/platform-azoozgat
           sudo -n ln -sf /etc/nginx/sites-available/platform-azoozgat /etc/nginx/sites-enabled/
           sudo -n nginx -t && sudo -n systemctl reload nginx
+          sudo -n systemctl restart nginx || true
           
       - name: Clear Nginx cache
         run: |
