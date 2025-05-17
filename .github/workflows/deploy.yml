@@ -59,14 +59,61 @@ jobs:
           pm2 save
           sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u root --hp $HOME || true
       
-      - name: Configure Nginx
+      - name: Install Caddy if not already installed
         run: |
-          sudo -n cp ./nginx/platform-azoozgat.conf /etc/nginx/sites-available/platform-azoozgat
-          sudo -n ln -sf /etc/nginx/sites-available/platform-azoozgat /etc/nginx/sites-enabled/
-          sudo -n nginx -t && sudo -n systemctl reload nginx
-          sudo -n systemctl restart nginx || true
+          if ! command -v caddy &> /dev/null; then
+            sudo -n apt update
+            sudo -n apt install -y debian-keyring debian-archive-keyring apt-transport-https
+            curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo -n gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+            curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo -n tee /etc/apt/sources.list.d/caddy-stable.list
+            sudo -n apt update
+            sudo -n apt install -y caddy
+          fi
+      
+      - name: Configure Caddy
+        run: |
+          # Create Caddy configuration file
+          sudo -n tee /etc/caddy/Caddyfile > /dev/null << 'EOF'
+          platform.azoozgat.com, www.platform.azoozgat.com, 62.171.152.23 {
+            # Enable gzip compression
+            encode gzip zstd
+
+            # Special handling for Next.js static files
+            @static {
+              path /_next/static/*
+            }
+            handle @static {
+              header Cache-Control "public, max-age=31536000, immutable"
+            }
+            
+            # Reverse proxy to your Next.js app
+            reverse_proxy localhost:3000 {
+              header_up Host {host}
+              header_up X-Real-IP {remote}
+              header_up X-Forwarded-For {remote}
+              header_up X-Forwarded-Proto {scheme}
+            }
+            
+            # Log requests for debugging
+            log {
+              output file /var/log/caddy/platform-access.log
+              format console
+            }
+          }
+          EOF
           
-      - name: Clear Nginx cache
+          # Reload Caddy to apply new configuration
+          sudo -n systemctl reload caddy
+          sudo -n systemctl restart caddy || true
+      
+      - name: Disable Nginx if installed
         run: |
-          sudo -n rm -rf /var/cache/nginx/* || true
-          sudo -n systemctl reload nginx
+          if command -v nginx &> /dev/null; then
+            sudo -n systemctl disable nginx
+            sudo -n systemctl stop nginx
+          fi
+          
+      - name: Verify Caddy is running
+        run: |
+          sudo -n systemctl status caddy
+          echo "Deployment complete. Site should be available at https://platform.azoozgat.com"
