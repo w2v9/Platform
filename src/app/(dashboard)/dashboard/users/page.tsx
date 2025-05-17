@@ -19,7 +19,7 @@ import { ActionCard } from "@/components/ActionCard";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuCheckboxItem } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal } from "lucide-react";
-import { FileQuestion, UserCog, Ban } from "lucide-react";
+import { UserCog, Ban } from "lucide-react";
 import { db } from "@/lib/config/firebase-config";
 import { collection, getDocs, updateDoc, doc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
@@ -46,7 +46,6 @@ export default function UsersPage() {
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
     const [rowSelection, setRowSelection] = useState({});
     const [banDialogOpen, setBanDialogOpen] = useState(false);
-    const [quizAssignDialogOpen, setQuizAssignDialogOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
     const actionCards = [
@@ -143,22 +142,6 @@ export default function UsersPage() {
             },
         },
         {
-            accessorKey: "quizAccess",
-            header: "Quiz Access",
-            cell: ({ row }) => {
-                const quizAccess = row.original.quizAccess;
-                const count = Object.keys(quizAccess || {}).length;
-
-                return (
-                    <div className="text-center">
-                        <Badge variant={count > 0 ? "default" : "outline"}>
-                            {count}
-                        </Badge>
-                    </div>
-                );
-            },
-        },
-        {
             id: "actions",
             cell: ({ row }) => {
                 const user = row.original;
@@ -179,16 +162,6 @@ export default function UsersPage() {
                             >
                                 <UserCog className="mr-2 h-4 w-4" />
                                 Edit User
-                            </DropdownMenuItem>
-
-                            <DropdownMenuItem
-                                onClick={() => {
-                                    setSelectedUser(user);
-                                    setQuizAssignDialogOpen(true);
-                                }}
-                            >
-                                <FileQuestion className="mr-2 h-4 w-4" />
-                                Manage Quiz Access
                             </DropdownMenuItem>
 
                             <DropdownMenuSeparator />

@@ -166,22 +166,6 @@ export default function UsersPage() {
             },
         },
         {
-            accessorKey: "quizAccess",
-            header: "Quiz Access",
-            cell: ({ row }) => {
-                const quizAccess = row.original.quizAccess;
-                const count = Object.keys(quizAccess || {}).length;
-
-                return (
-                    <div className="text-center">
-                        <Badge variant={count > 0 ? "default" : "outline"}>
-                            {count}
-                        </Badge>
-                    </div>
-                );
-            },
-        },
-        {
             id: "actions",
             cell: ({ row }) => {
                 const user = row.original;
@@ -202,16 +186,6 @@ export default function UsersPage() {
                             >
                                 <UserCog className="mr-2 h-4 w-4" />
                                 Edit User
-                            </DropdownMenuItem>
-
-                            <DropdownMenuItem
-                                onClick={() => {
-                                    setSelectedUser(user);
-                                    setQuizAssignDialogOpen(true);
-                                }}
-                            >
-                                <FileQuestion className="mr-2 h-4 w-4" />
-                                Manage Quiz Access
                             </DropdownMenuItem>
 
                             <DropdownMenuSeparator />
