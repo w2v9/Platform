@@ -8,20 +8,6 @@ jobs:
   deploy:
     runs-on: self-hosted
     steps:
-      - name: Thorough Cleanup
-        run: |
-          # Stop the application first to release any file locks
-          pm2 stop platform-azoozgat || true
-          
-          # Clean up build artifacts and dependencies
-          sudo -n rm -rf /actions-runner/_work/AzoozGAT-Platform/AzoozGAT-Platform/.next/ || true
-          sudo -n rm -rf /actions-runner/_work/AzoozGAT-Platform/AzoozGAT-Platform/node_modules/ || true
-          sudo -n rm -rf /actions-runner/_work/AzoozGAT-Platform/AzoozGAT-Platform/.cache/ || true
-          
-          # Clean browser caches by adding a timestamp file that will force reload
-          mkdir -p /actions-runner/_work/AzoozGAT-Platform/AzoozGAT-Platform/public/version
-          date > /actions-runner/_work/AzoozGAT-Platform/AzoozGAT-Platform/public/version/timestamp.txt
-      
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
@@ -42,23 +28,17 @@ jobs:
         
       - name: Clean Next.js cache and build
         run: |
-          rm -rf .next
           npm run build
-      
-      - name: Setup PM2
+
+      - name: Setup PM2 
         run: |
           sudo -n npm install -g pm2
-          pm2 stop platform-azoozgat || true
-          pm2 delete platform-azoozgat || true
-          
-          # Set proper permissions for the .next directory
-          chmod -R 755 .next
-          
-          # Start with production mode
-          NODE_ENV=production pm2 start npm --name "platform-azoozgat" --cwd "/actions-runner/_work/AzoozGAT-Platform/AzoozGAT-Platform" -- start
-          pm2 save
-          sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u root --hp $HOME || true
-      
+          sudo -n pm2 stop platform-azoozgat || true
+          sudo -n pm2 delete platform-azoozgat || true
+          sudo -n NODE_ENV=production pm2 start npm --name "platform-azoozgat" --cwd "/actions-runner/_work/AzoozGAT-Platform/AzoozGAT-Platform" -- start
+          sudo -n pm2 save
+          sudo -n pm2 startup
+
       - name: Install Caddy if not already installed
         run: |
           if ! command -v caddy &> /dev/null; then
@@ -69,46 +49,28 @@ jobs:
             sudo -n apt update
             sudo -n apt install -y caddy
           fi
-      
+
       - name: Configure Caddy
         run: |
+          sudo -n systemctl stop caddy || true
+          
           # Create Caddy configuration file
-          sudo -n tee /etc/caddy/Caddyfile > /dev/null << 'EOF'
-          platform.azoozgat.com, www.platform.azoozgat.com, 62.171.152.23 {
-            # Enable gzip compression
-            encode gzip zstd
-
-            # Special handling for Next.js static files
-            @static {
-              path /_next/static/*
-            }
-            handle @static {
-              header Cache-Control "public, max-age=31536000, immutable"
-            }
-            
-            # Reverse proxy to your Next.js app
-            reverse_proxy localhost:3000 {
-              header_up Host {host}
-              header_up X-Real-IP {remote}
-              header_up X-Forwarded-For {remote}
-              header_up X-Forwarded-Proto {scheme}
-            }
-            
-            # Log requests for debugging
-            log {
-              output file /var/log/caddy/platform-access.log
-              format console
-            }
+          sudo -n tee /etc/caddy/Caddyfile > /dev/null <<EOF
+          platform.azoozgat.com {
+            reverse_proxy localhost:3000
           }
           EOF
+          sudo -n systemctl start caddy
           
-          # Reload Caddy to apply new configuration
-
-          sudo -n systemctl reload caddy
-          sudo -n systemctl restart caddy || true
-    
-          
-      - name: Verify Caddy is running
+      - name: Verify deployment
         run: |
-          sudo -n systemctl status caddy
+          # Check Caddy status
+          sudo -n systemctl status caddy || true
+          
+          # Check PM2 status
+          sudo -n pm2 status || true
+          
+          # Verify app is responding
+          curl -I http://localhost:3000 || true
+          
           echo "Deployment complete. Site should be available at https://platform.azoozgat.com"
