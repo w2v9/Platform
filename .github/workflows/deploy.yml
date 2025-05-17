@@ -8,10 +8,17 @@ jobs:
   deploy:
     runs-on: self-hosted
     steps:
+      - name: Clean up previous 
+        run: |
+          sudo -n pm2 stop platform-azoozgat || true
+          sudo -n pm2 delete platform-azoozgat || true
+          sudo -n rm -rf /actions-runner/_work/AzoozGAT-Platform/AzoozGAT-Platform/*
+
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
           clean: true
+
       
       - name: Setup Node.js
         uses: actions/setup-node@v3
