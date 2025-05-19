@@ -18,9 +18,7 @@ import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { loginUser } from "@/lib/db_user"
 import { useAuth } from "@/lib/context/authContext"
-import { useEffect } from "react"
-
-
+import { useEffect, useState } from "react"
 
 const formSchema = z.object({
     email: z.string().min(1, { message: "Email is required" }).email({ message: "Invalid email address" }),
@@ -30,11 +28,13 @@ const formSchema = z.object({
 export default function LoginPage() {
     const router = useRouter()
     const { user } = useAuth()
+    const [isSubmitting, setIsSubmitting] = useState(false)
 
     useEffect(() => {
         if (user) {
             router.push("/dashboard")
         }
+
     }, [user, router])
 
     const form = useForm<z.infer<typeof formSchema>>({
@@ -46,10 +46,22 @@ export default function LoginPage() {
     })
 
     function onSubmit(values: z.infer<typeof formSchema>) {
+        setIsSubmitting(true)
+
         const promise = loginUser(values.email, values.password)
-            .then((userCredential) => {
-                toast.success("Login successful!");
-                router.push("/dashboard");
+            .then((response) => {
+                if (response.statusMessage === "banned") {
+                    toast.error(response.message);
+                } else {
+                    if (response.statusMessage === "warned") {
+                        toast.warning(response.message);
+                    } else if (response.statusMessage === "activated") {
+                        toast.info(response.message);
+                    } else if (response.statusMessage === "new_account") {
+                        toast.info(response.message);
+                    }
+                    toast.success("Login successful!");
+                }
             })
             .catch((error) => {
                 switch (error.code) {
@@ -68,6 +80,9 @@ export default function LoginPage() {
                     default:
                         toast.error("Sign-in error: " + error.message);
                 }
+            })
+            .finally(() => {
+                setIsSubmitting(false)
             });
 
         toast.promise(promise, {
@@ -108,7 +123,7 @@ export default function LoginPage() {
                             </FormItem>
                         )}
                     />
-                    <Button type="submit" className="w-full">Login</Button>
+                    <Button type="submit" className="w-full" disabled={isSubmitting}>Login</Button>
                 </form>
             </Form>
         </section>

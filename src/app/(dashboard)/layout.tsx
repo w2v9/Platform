@@ -12,6 +12,7 @@ import { getUserById, UserRole } from "@/lib/db_user";
 import { FileUser, Home, Inbox, ScrollText, Users, AlertTriangle, Loader2 } from "lucide-react";
 import { SidebarItem } from "@/components/app-sidebar";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { auth } from "@/lib/config/firebase-config";
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -124,6 +125,17 @@ function RouteProtection({ children }: { children: React.ReactNode }) {
             try {
                 const userDoc = await getUserById(user.uid);
                 setUserData(userDoc);
+                if (!userDoc) {
+                    console.error("User data not found in database");
+                    router.push("/login");
+                    return;
+                }
+
+                if (userDoc?.status === 'banned') {
+                    console.error("User is banned!");
+                    setError("Your account has been banned.");
+                    return;
+                }
 
                 const currentRoute = routes.find(route =>
                     pathname === route.path || pathname.startsWith(`${route.path}/`)

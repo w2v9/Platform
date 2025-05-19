@@ -16,7 +16,8 @@ import {
     query,
     where,
     getDocs,
-    deleteDoc
+    deleteDoc,
+    addDoc
 } from "firebase/firestore";
 import { db, auth } from "./config/firebase-config";
 import { getDeviceInfo } from "./utils/getDeviceInfo";
@@ -70,6 +71,7 @@ export type QuizReport = Array<{
 }>;
 
 export type User = {
+    uid?: string;
     id: string;
     displayName: string;
     photoURL?: string;
@@ -127,6 +129,36 @@ export async function loginUser(email: string, password: string) {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
 
+        const userRef = doc(db, "users", user.uid);
+        let userDoc = await getDoc(userRef);
+
+        if (!userDoc.exists()) {
+            const userData: User = {
+                id: user.uid,
+                displayName: user.displayName || "",
+                email: user.email || "",
+                role: "user",
+                status: "inactive",
+                metadata: {
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                },
+                quizResults: []
+            };
+            await setDoc(doc(db, "users", user.uid), userData);
+        }
+
+        userDoc = await getDoc(userRef);
+        const userData = userDoc.data() as User;
+
+        if (userData.status === "banned") {
+            return {
+                user: null,
+                statusMessage: "banned",
+                message: "Your account has been banned. Please contact support."
+            };
+        }
+
         const deviceInfo: Device = getDeviceInfo();
         const { ip, location } = await getIpAndLocation();
 
@@ -137,27 +169,37 @@ export async function loginUser(email: string, password: string) {
             device: deviceInfo
         };
 
-        const userRef = doc(db, "users", user.uid);
-        const userDoc = await getDoc(userRef);
+        const updateData: any = {
+            "metadata.lastLoginAt": new Date().toISOString(),
+            "metadata.sessions": [...(userData.metadata.sessions || []), sessionData],
+            "metadata.updatedAt": new Date().toISOString(),
+        };
 
-        if (userDoc.exists()) {
-            const userData = userDoc.data() as User;
-            const updatedSessions = [...(userData.metadata.sessions || []), sessionData];
-
-            await updateDoc(userRef, {
-                "metadata.lastLoginAt": new Date().toISOString(),
-                "metadata.sessions": updatedSessions,
-                "metadata.updatedAt": new Date().toISOString(),
-                "status": "active"
-            });
-        }
+        await updateDoc(userRef, updateData);
 
         const updatedUserData = await getUserById(user.uid);
-        if (!updatedUserData) {
-            throw new Error("User not found after login");
+
+        if (userData.status === "warned") {
+            return {
+                user: updatedUserData,
+                statusMessage: "warned",
+                message: "Your account has been warned. Please follow our guidelines to avoid account suspension."
+            };
         }
 
-        return updatedUserData;
+        if (userData.status === "inactive") {
+            return {
+                user: updatedUserData,
+                statusMessage: "activated",
+                message: "Activating your account. Your location, device, and network details will be recorded."
+            };
+        }
+
+        return {
+            user: updatedUserData,
+            statusMessage: "success",
+            message: "Login successful"
+        };
 
     } catch (error) {
         console.error("Error logging in:", error);
@@ -183,6 +225,8 @@ export async function resetPasswordMail(email: string) {
 }
 
 export async function getUserById(userId: string): Promise<User | null> {
+    console.log("Fetching user data for ID:", userId);
+
     try {
         const docRef = doc(db, "users", userId);
         const docSnap = await getDoc(docRef);
