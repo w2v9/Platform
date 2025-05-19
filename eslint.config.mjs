@@ -17,9 +17,16 @@ const eslintConfig = [
     }
   },
   {
-    files: ["**/lib/db_*.ts"],
+    files: [
+      "**/lib/db_*.ts",
+      "**/app/(quiz)/quiz/**/*.tsx",
+      "**/app/(dashboard)/dashboard/me/results/**/*.tsx",
+      "**/app/(dashboard)/dashboard/quizzes/**/*.tsx",
+      "**/app/(dashboard)/dashboard/quizzes/edit/**/*.tsx",
+    ],
     rules: {
-      "@typescript-eslint/no-unused-vars": "off"
+      "@typescript-eslint/no-unused-vars": "off",
+      "@typescript-eslint/no-explicit-any": "off"
     }
   }
 ];

@@ -14,10 +14,12 @@ export type QuizReports = QuizReport[];
 
 export type SelectedOption = {
     questionId: string;
-    selectedOptionId: string;
+    optionSetId: string;
+    selectedOptionId: string[];
 };
 
 export interface QuizReport {
+    id: string;
     quizId: string;
     quizTitle: string;
     answeredQuestions: Question[];
@@ -47,15 +49,19 @@ export async function getAllReports(): Promise<QuizReports> {
 }
 
 export async function getReportById(id: string): Promise<QuizReport | null> {
+
     try {
-        const reportRef = doc(db, "reports", id);
-        const reportSnapshot = await getDoc(reportRef);
-        if (reportSnapshot.exists()) {
-            return reportSnapshot.data() as QuizReport;
-        } else {
-            console.error("No such document!");
-            return null;
-        }
+        const reportRef = collection(db, "reports");
+        const q = query(reportRef, where("id", "==", id));
+        const querySnapshot = await getDocs(q);
+        let report: QuizReport | null = null;
+
+        querySnapshot.forEach((doc) => {
+            report = doc.data() as QuizReport;
+        });
+
+        return report;
+
     } catch (error) {
         console.error("Error fetching quiz report:", error);
         throw error;

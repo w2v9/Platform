@@ -1,6 +1,6 @@
 'use client'
 import Image from "next/image";
-import { Quiz, Option } from "@/data/quiz";
+import { Quiz, Option, OptionSet, Question } from "@/data/quiz";
 import { Button } from "@/components/ui/button"
 
 import {
@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/resizable"
 
 import { Progress } from "@/components/ui/progress"
-import { Clock, FlagIcon, MoveLeft, MoveRight } from "lucide-react";
+import { Clock, FlagIcon, MoveLeft, MoveRight, Check } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { ScrollArea } from "./ui/scroll-area";
 import { Toggle } from "@/components/ui/toggle";
@@ -21,6 +21,8 @@ import { toast } from "sonner";
 import { recordLog } from "@/lib/db_logs";
 import { v4 } from "uuid";
 import { useRouter } from "next/navigation";
+import { Checkbox } from "./ui/checkbox";
+import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 
 export function QustionCard({ index, currentIndex, setCurentIndex, markedForReview, answerSelected }: {
     index: number,
@@ -41,11 +43,11 @@ export function QustionCard({ index, currentIndex, setCurentIndex, markedForRevi
         </Button>
     );
 }
-export function QustionCard2({ index, setCurentIndex, markedForReview, answer, isHardMode }: {
+export function QustionCard2({ index, setCurentIndex, markedForReview, answers, isHardMode }: {
     index: number,
     setCurentIndex: (index: number) => void,
     markedForReview?: boolean,
-    answer?: string | null
+    answers?: string[] | null
     isHardMode?: boolean
 }) {
     return (
@@ -62,8 +64,8 @@ export function QustionCard2({ index, setCurentIndex, markedForReview, answer, i
                     <p></p>
                 </div>
                 <div>
-                    <p>{answer && <span className="text-gray-400">Answered</span>}
-                        {!answer && <span className="text-gray-400">Not answered</span>}
+                    <p>{answers && answers.length > 0 && <span className="text-gray-400">Answered</span>}
+                        {!answers || answers.length === 0 && <span className="text-red-400">Not answered</span>}
                     </p>
                 </div>
             </div>
@@ -80,7 +82,7 @@ const formatTime = (seconds: number): string => {
 
 interface FormQuestionData {
     index: number;
-    answer: string | null;
+    answers: string[];
     markedForReview: boolean;
 }
 
@@ -91,10 +93,10 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
     const [formData, setFormData] = useState<FormData>(() => {
         return quizData.questions.map((question, index) => ({
             index,
-            answer: null,
+            answers: [],
             markedForReview: false,
         }));
-    })
+    });
     const { user } = useAuth();
 
     const [timeRemaining, setTimeRemaining] = useState<number>(quizData.timeLimit * 60 || 1800);
@@ -115,20 +117,51 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
         return () => clearInterval(timer);
     }, [timeRemaining]);
 
-
     const currentFormData = formData[currentQuestionIndex];
     const currentQuestion = quizData.questions[currentQuestionIndex];
 
-    const handleSingleChoiceToggle = (answer: string) => {
-        setFormData(prev => prev.map(item => {
-            if (item.index === currentQuestionIndex) {
-                return {
-                    ...item,
-                    answer: answer
-                };
-            }
-            return item;
-        }));
+    const selectedSetIndex = currentQuestion?.selectedSetIndex !== undefined
+        ? currentQuestion.selectedSetIndex
+        : currentQuestion?.activeSetIndex || 0;
+
+    const currentOptionSet = currentQuestion?.optionSets[selectedSetIndex];
+
+    const isMultipleChoice = currentOptionSet?.answer.length > 1;
+
+    const handleOptionToggle = (optionId: string) => {
+        if (isMultipleChoice) {
+            // For multiple choice questions, toggle selected options
+            setFormData(prev => prev.map(item => {
+                if (item.index === currentQuestionIndex) {
+                    const current = [...item.answers];
+                    const optionIndex = current.indexOf(optionId);
+
+                    if (optionIndex === -1) {
+                        // Add option if not selected
+                        current.push(optionId);
+                    } else {
+                        // Remove option if already selected
+                        current.splice(optionIndex, 1);
+                    }
+
+                    return {
+                        ...item,
+                        answers: current
+                    };
+                }
+                return item;
+            }));
+        } else {
+            setFormData(prev => prev.map(item => {
+                if (item.index === currentQuestionIndex) {
+                    return {
+                        ...item,
+                        answers: [optionId]
+                    };
+                }
+                return item;
+            }));
+        }
     };
 
     const handleMarkForReview = () => {
@@ -140,24 +173,46 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
     };
 
     const handleSubmit = useCallback(async () => {
+        const answeredQuestions = formData.filter(item => item.answers.length > 0);
 
-        const answeredQuestions = formData.filter(item => item.answer !== null);
         const score = answeredQuestions.reduce((acc, item) => {
             const question = quizData.questions[item.index];
-            return acc + (item.answer === question.answer.option ? 1 : 0);
+            const setIndex = question.selectedSetIndex !== undefined
+                ? question.selectedSetIndex
+                : question.activeSetIndex || 0;
+
+            const optionSet = question.optionSets[setIndex];
+            const correctOptions = optionSet.answer;
+
+            if (correctOptions.length === 1) {
+                return acc + (item.answers.length === 1 && correctOptions.includes(item.answers[0]) ? 1 : 0);
+            } else {
+                const allCorrectSelected = correctOptions.every(id => item.answers.includes(id));
+                const noIncorrectSelected = item.answers.every(id => correctOptions.includes(id));
+                return acc + (allCorrectSelected && noIncorrectSelected ? 1 : 0);
+            }
         }, 0);
 
         const maxScore = quizData.questions.length;
         const percentageScore = (score / maxScore) * 100;
 
         const quizReport: QuizReport = {
+            id: v4(),
             quizId: quizData.id,
             quizTitle: quizData.title,
-            answeredQuestions: quizData.questions.filter((_, index) => formData[index].answer !== null),
-            selectedOptions: formData.map(item => ({
-                questionId: quizData.questions[item.index].id,
-                selectedOptionId: item.answer || "",
-            })),
+            answeredQuestions: quizData.questions.filter((_, index) => formData[index].answers.length > 0),
+            selectedOptions: formData.map(item => {
+                const question = quizData.questions[item.index];
+                const setIndex = question.selectedSetIndex !== undefined
+                    ? question.selectedSetIndex
+                    : question.activeSetIndex || 0;
+
+                return {
+                    questionId: question.id,
+                    optionSetId: question.optionSets[setIndex].id,
+                    selectedOptionId: item.answers,
+                };
+            }),
             userName: user?.email || user?.displayName || "",
             timeTaken: ((quizData.timeLimit * 60) - timeRemaining) / 60, // in minutes
             userId: user?.uid || "",
@@ -222,6 +277,41 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
         };
     }, []);
 
+    const renderOptions = () => {
+        if (!currentOptionSet) return null;
+
+        return currentOptionSet.options.map((option: Option) => (
+            <div
+                key={option.id}
+                className={`my-4 p-3 border rounded-md cursor-pointer transition-colors ${currentFormData.answers.includes(option.id || "")
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-white hover:bg-gray-50"
+                    }`}
+                onClick={() => handleOptionToggle(option.id || "")}
+            >
+                <div className="flex items-center space-x-3">
+                    {isMultipleChoice ? (
+                        <Checkbox
+                            checked={currentFormData.answers.includes(option.id || "")}
+                            onCheckedChange={() => handleOptionToggle(option.id || "")}
+                            className="h-5 w-5"
+                        />
+                    ) : (
+                        <div className={`w-4 h-4 rounded-full border ${currentFormData.answers.includes(option.id || "")
+                            ? "border-primary-foreground bg-primary-foreground"
+                            : "border-gray-300"
+                            }`}>
+                            {currentFormData.answers.includes(option.id || "") &&
+                                <div className="w-2 h-2 mx-auto my-[3px] bg-primary rounded-full" />
+                            }
+                        </div>
+                    )}
+                    <span>{option.option}</span>
+                </div>
+            </div>
+        ));
+    };
+
     return (
         <div className="flex flex-col h-screen fixed inset-0">
             <div id="header" className="flex-shrink-0 p-4 bg-white shadow-sm">
@@ -268,10 +358,10 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
                         timeRemaining < 300 ? "bg-orange-500" :
                             "bg-blue-500"
                         }`}
-                />            </div>
+                />
+            </div>
             {
                 currentQuestionIndex < quizData.questions.length && (
-
                     <div id="Question" className="flex-grow overflow-hidden">
                         <ResizablePanelGroup
                             direction={isDesktop ? "horizontal" : "vertical"}
@@ -309,28 +399,17 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
 
                                         <ResizablePanel defaultSize={35}>
                                             <div className="py-4">
-                                                {currentQuestion.options.map((option: Option) => (
-                                                    <div
-                                                        key={option.id}
-                                                        className={`my-4 p-3 border rounded-md cursor-pointer transition-colors ${currentFormData.answer === option.option
-                                                            ? "bg-primary text-primary-foreground"
-                                                            : "bg-white hover:bg-gray-50"
-                                                            }`}
-                                                        onClick={() => handleSingleChoiceToggle(option.option)}
-                                                    >
-                                                        <div className="flex items-center space-x-2">
-                                                            <div className={`w-4 h-4 rounded-full border ${currentFormData.answer === option.option
-                                                                ? "border-primary-foreground bg-primary-foreground"
-                                                                : "border-gray-300"
-                                                                }`}>
-                                                                {currentFormData.answer === option.option &&
-                                                                    <div className="w-2 h-2 mx-auto my-[3px] bg-primary rounded-full" />
-                                                                }
-                                                            </div>
-                                                            <span>{option.option}</span>
-                                                        </div>
-                                                    </div>
-                                                ))}
+                                                {renderOptions()}
+
+                                                {isMultipleChoice && (
+                                                    <Alert className="mt-4 bg-blue-50">
+                                                        <Check className="h-4 w-4" />
+                                                        <AlertTitle>Multiple answers required</AlertTitle>
+                                                        <AlertDescription>
+                                                            This question requires selecting multiple correct answers.
+                                                        </AlertDescription>
+                                                    </Alert>
+                                                )}
                                             </div>
                                         </ResizablePanel>
                                     </ResizablePanelGroup>
@@ -338,7 +417,8 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
                             </ResizablePanel>
                         </ResizablePanelGroup>
                     </div>
-                )}
+                )
+            }
             {
                 currentQuestionIndex === quizData.questions.length && (
                     <ScrollArea className="h-full w-full p-4 overflow-auto">
@@ -353,7 +433,7 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
                                     index={index}
                                     setCurentIndex={setCurrentQuestionIndex}
                                     markedForReview={question.markedForReview}
-                                    answer={question.answer}
+                                    answers={question.answers}
                                     isHardMode={quizData.quizType === "no-review" ? true : false}
                                 />
                             ))}
@@ -371,9 +451,8 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
                         variant="outline"
                         disabled={currentQuestionIndex === 0 || quizData.quizType === "no-review"}
                         onClick={() => setCurrentQuestionIndex(prev => prev - 1)}
-
                     >
-                        <MoveLeft size={16} className="ml-2" />
+                        <MoveLeft size={16} className="mr-2" />
                         Previous
                     </Button>
                     <Button

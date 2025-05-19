@@ -20,14 +20,7 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog";
+
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -55,6 +48,7 @@ import {
 } from "@/components/ui/select";
 import { format } from "date-fns";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useRouter } from "next/navigation";
 
 export default function ResultsPage() {
     const { user } = useAuth();
@@ -69,6 +63,8 @@ export default function ResultsPage() {
     const [searchField, setSearchField] = useState<"quizTitle" | "quizId">("quizTitle");
     const [quizIds, setQuizIds] = useState<string[]>([]);
     const [selectedQuizId, setSelectedQuizId] = useState<string>("");
+    const router = useRouter();
+
 
     const scoreRanges = [
         { label: "Below 50%", value: "below50", checked: false },
@@ -186,9 +182,15 @@ export default function ResultsPage() {
     };
 
     const formatTime = (seconds: number) => {
+        seconds = Math.floor(seconds);
+
         const minutes = Math.floor(seconds / 60);
         const remainingSeconds = seconds % 60;
-        return `${minutes}m ${remainingSeconds}s`;
+
+        const formattedMinutes = String(minutes).padStart(2, "0");
+        const formattedSeconds = String(remainingSeconds).padStart(2, "0");
+
+        return `${formattedMinutes}:${formattedSeconds}s`;
     };
 
     const getScoreColor = (percentage?: number) => {
@@ -447,86 +449,18 @@ export default function ResultsPage() {
                                         <TableCell>
                                             <div className="flex items-center">
                                                 <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
-                                                {formatTime(report.timeTaken)}
+                                                {formatTime(report.timeTaken * 60)}
                                             </div>
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <Dialog>
-                                                <DialogTrigger asChild>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() => setSelectedReport(report)}
-                                                    >
-                                                        View Details
-                                                    </Button>
-                                                </DialogTrigger>
-                                                <DialogContent className="w-[80vw] max-h-[80vh] overflow-y-auto">
-                                                    <DialogHeader>
-                                                        <DialogTitle>Quiz Result Details</DialogTitle>
-                                                        <DialogDescription>
-                                                            Detailed information about quiz performance
-                                                        </DialogDescription>
-                                                    </DialogHeader>
-                                                    {selectedReport && (
-                                                        <div className="space-y-6 mt-4">
-                                                            <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
-                                                                <Card>
-                                                                    <CardHeader className="pb-2">
-                                                                        <CardTitle className="text-sm font-medium">Quiz Information</CardTitle>
-                                                                    </CardHeader>
-                                                                    <CardContent>
-                                                                        <div className="text-sm">
-                                                                            <p className="font-semibold">{selectedReport.quizTitle}</p>
-                                                                            <p className="text-muted-foreground mt-1">ID: {selectedReport.quizId}</p>
-                                                                        </div>
-                                                                    </CardContent>
-                                                                </Card>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => router.push(`/dashboard/me/results/${report.id}`)}
+                                            >
+                                                View Details
+                                            </Button>
 
-                                                                <Card>
-                                                                    <CardHeader className="pb-2">
-                                                                        <CardTitle className="text-sm font-medium">Score</CardTitle>
-                                                                    </CardHeader>
-                                                                    <CardContent>
-                                                                        <div className="text-2xl font-bold">
-                                                                            {selectedReport.score} / {selectedReport.maxScore}
-                                                                        </div>
-                                                                        <div className={`inline-block px-2 py-1 rounded text-sm mt-2 ${getScoreColor(selectedReport.percentageScore)}`}>
-                                                                            {selectedReport.percentageScore?.toFixed(0)}%
-                                                                            {(selectedReport.percentageScore || 0) >= 50 ? " (Passed)" : " (Failed)"}
-                                                                        </div>
-                                                                    </CardContent>
-                                                                </Card>
-
-                                                                <Card>
-                                                                    <CardHeader className="pb-2">
-                                                                        <CardTitle className="text-sm font-medium">User Info</CardTitle>
-                                                                    </CardHeader>
-                                                                    <CardContent>
-                                                                        <div className="flex items-center gap-2">
-                                                                            <UserIcon className="h-5 w-5 text-muted-foreground" />
-                                                                            <div>
-                                                                                <p className="font-medium">{selectedReport.userName || selectedReport.userId}</p>
-                                                                                <p className="text-sm text-muted-foreground">{selectedReport.userId}</p>
-                                                                            </div>
-                                                                        </div>
-                                                                    </CardContent>
-                                                                </Card>
-                                                                <Card>
-                                                                    <CardHeader className="pb-2">
-                                                                        <CardTitle className="text-sm font-medium">Time Taken</CardTitle>
-                                                                    </CardHeader>
-                                                                    <CardContent>
-                                                                        <div className="text-sm">
-                                                                            {formatTime(selectedReport.timeTaken)}
-                                                                        </div>
-                                                                    </CardContent>
-                                                                </Card>
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </DialogContent>
-                                            </Dialog>
                                         </TableCell>
                                     </TableRow>
                                 ))}

@@ -16,7 +16,7 @@ export default function Home() {
     if (user) {
       router.push('/dashboard')
     };
-  }, [user]);
+  }, [user, router]);
 
   return (
     <div className="flex flex-row md:flex-col lg:flex-col items-center justify-between p-8 md:p-16 lg:p-24">

@@ -1,6 +1,6 @@
 "use client";
 
-import type { Quiz, Question, Option } from "@/data/quiz";
+import type { Quiz, Question, Option, OptionSet } from "@/data/quiz";
 import { getQuizById, updateQuiz } from "@/lib/db_quiz";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -43,6 +43,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { recordLog } from "@/lib/db_logs";
 import { useAuth } from "@/lib/context/authContext";
+import { Switch } from "@/components/ui/switch";
 
 // Define the Option schema
 const optionSchema = z.object({
@@ -59,9 +60,14 @@ const questionSchema = z.object({
     questionImage: z.string().optional(),
     questionAudio: z.string().optional(),
     questionVideo: z.string().optional(),
-    questionType: z.string().optional().default("single-choice"),
-    options: z.array(optionSchema).min(2, { message: "At least 2 options are required" }),
-    answer: optionSchema,
+    optionSets: z.array(z.object({
+        id: z.string(),
+        options: z.array(optionSchema).min(2, { message: "At least 2 options are required" }),
+        answer: z.array(z.string())
+    })).min(1, {
+        message: "At least one option set is required"
+    }),
+    activeSetIndex: z.number().default(0),
 });
 
 // Define the Quiz schema
@@ -70,10 +76,12 @@ const quizSchema = z.object({
     title: z.string().min(1, { message: "Title is required" }),
     description: z.string().min(1, { message: "Description is required" }),
     timeLimit: z.number().int().positive({ message: "Time limit must be a positive number" }),
-    quizType: z.enum(["normal", "no-review"]).optional(),
+    quizType: z.enum(["normal", "no-review"]).default("normal"),
     questions: z.array(questionSchema).min(1, { message: "At least one question is required" }),
     createdAt: z.string().optional(),
     updatedAt: z.string().optional(),
+    randomizeQuestions: z.boolean().default(false),
+    randomizeOptions: z.boolean().default(false),
 });
 
 type QuizFormValues = z.infer<typeof quizSchema>;
@@ -96,6 +104,8 @@ export default function EditQuizPage({ params }: { params: Promise<{ id: string 
             description: "",
             timeLimit: 30,
             quizType: "normal",
+            randomizeQuestions: false,
+            randomizeOptions: false,
             questions: [
                 {
                     question: "",
@@ -103,12 +113,17 @@ export default function EditQuizPage({ params }: { params: Promise<{ id: string 
                     questionImage: "",
                     questionAudio: "",
                     questionVideo: "",
-                    questionType: "single-choice",
-                    options: [
-                        { option: "", isCorrect: false },
-                        { option: "", isCorrect: false }
+                    optionSets: [
+                        {
+                            id: uuidv4(),
+                            options: [
+                                { id: uuidv4(), option: "", isCorrect: false },
+                                { id: uuidv4(), option: "", isCorrect: false }
+                            ],
+                            answer: []
+                        }
                     ],
-                    answer: { option: "", isCorrect: false },
+                    activeSetIndex: 0,
                 },
             ],
         },
@@ -143,6 +158,44 @@ export default function EditQuizPage({ params }: { params: Promise<{ id: string 
         return changedFields;
     }
 
+    function convertLegacyQuizFormat(quiz: any): Quiz {
+        const questions = quiz.questions.map((question: any) => {
+            if (question.options && !question.optionSets) {
+                const correctOptions = question.options.filter((opt: Option) => opt.isCorrect);
+                const correctIds = correctOptions.map((opt: Option) => opt.id || uuidv4());
+
+                const optionSet = {
+                    id: uuidv4(),
+                    options: question.options.map((opt: Option) => ({
+                        ...opt,
+                        id: opt.id || uuidv4()
+                    })),
+                    answer: correctIds
+                };
+
+                return {
+                    ...question,
+                    optionSets: [optionSet],
+                    activeSetIndex: 0,
+                    options: undefined,
+                    answer: undefined
+                };
+            }
+            return {
+                ...question,
+                optionSets: question.optionSets || [],
+                activeSetIndex: question.activeSetIndex || 0
+            };
+        });
+
+        return {
+            ...quiz,
+            questions,
+            randomizeQuestions: quiz.randomizeQuestions || false,
+            randomizeOptions: quiz.randomizeOptions || false
+        };
+    }
+
     useEffect(() => {
         async function fetchQuiz() {
             setIsLoading(true);
@@ -156,18 +209,20 @@ export default function EditQuizPage({ params }: { params: Promise<{ id: string 
                     return;
                 }
 
-                const typedQuiz = quiz as Quiz;
-                setOriginalQuiz(typedQuiz);
+                const convertedQuiz = convertLegacyQuizFormat(quiz);
+                setOriginalQuiz(convertedQuiz);
 
                 reset({
                     id: quizId,
-                    title: quiz.title,
-                    description: quiz.description,
-                    timeLimit: quiz.timeLimit,
-                    quizType: quiz.quizType || "normal",
-                    questions: quiz.questions,
-                    createdAt: quiz.createdAt,
-                })
+                    title: convertedQuiz.title,
+                    description: convertedQuiz.description,
+                    timeLimit: convertedQuiz.timeLimit,
+                    quizType: convertedQuiz.quizType || "normal",
+                    questions: convertedQuiz.questions,
+                    createdAt: convertedQuiz.createdAt,
+                    randomizeQuestions: convertedQuiz.randomizeQuestions || false,
+                    randomizeOptions: convertedQuiz.randomizeOptions || false,
+                });
 
                 setOpenQuestions({ 0: true });
 
@@ -193,18 +248,31 @@ export default function EditQuizPage({ params }: { params: Promise<{ id: string 
                 updatedAt: new Date().toISOString(),
                 createdAt: data.createdAt || originalQuiz?.createdAt || new Date().toISOString(),
                 quizType: data.quizType || "normal",
-                questions: data.questions.map((question) => ({
-                    ...question,
-                    id: question.id || uuidv4(),
-                    options: question.options.map((option) => ({
-                        ...option,
-                        id: option.id || uuidv4(),
-                    })),
-                    answer: {
-                        ...question.answer,
-                        id: question.answer.id || uuidv4(),
-                    },
-                })),
+                questions: data.questions.map((question) => {
+                    const optionSets = question.optionSets.map(set => {
+                        const correctOptionIds = set.options
+                            .filter(opt => opt.isCorrect)
+                            .map(opt => opt.id || uuidv4())
+                            .filter((id): id is string => id !== undefined); // Ensure no undefined values
+
+                        return {
+                            id: set.id || uuidv4(),
+                            options: set.options.map(option => ({
+                                ...option,
+                                id: option.id || uuidv4(),
+                            })),
+                            answer: correctOptionIds
+                        };
+                    });
+
+                    return {
+                        ...question,
+                        id: question.id || uuidv4(),
+                        optionSets
+                    };
+                }),
+                randomizeQuestions: data.randomizeQuestions || false,
+                randomizeOptions: data.randomizeOptions || false,
             };
 
             await updateQuiz(updatedQuiz);
@@ -227,7 +295,7 @@ export default function EditQuizPage({ params }: { params: Promise<{ id: string 
                 id: loadingToast,
             });
             setOriginalQuiz(updatedQuiz);
-
+            router.push("/dashboard/quizzes");
 
         } catch (error) {
             console.error("Error updating quiz:", error);
@@ -255,8 +323,6 @@ export default function EditQuizPage({ params }: { params: Promise<{ id: string 
             toast.error("Failed to update quiz", {
                 id: loadingToast,
             });
-        } finally {
-            router.push("/dashboard/quizzes");
         }
     };
 
@@ -274,6 +340,8 @@ export default function EditQuizPage({ params }: { params: Promise<{ id: string 
                             quizType: originalQuiz.quizType || "normal",
                             questions: originalQuiz.questions,
                             createdAt: originalQuiz.createdAt,
+                            randomizeQuestions: originalQuiz.randomizeQuestions || false,
+                            randomizeOptions: originalQuiz.randomizeOptions || false,
                         });
                         toast.success("Changes discarded");
                     }
@@ -445,6 +513,7 @@ export default function EditQuizPage({ params }: { params: Promise<{ id: string 
                                                 </FormItem>
                                             )}
                                         />
+
                                         <FormField
                                             control={control}
                                             name="quizType"
@@ -472,6 +541,54 @@ export default function EditQuizPage({ params }: { params: Promise<{ id: string 
                                                 </FormItem>
                                             )}
                                         />
+
+                                        {/* Randomization options */}
+                                        <div className="border rounded-lg p-4 space-y-4 mt-4">
+                                            <h3 className="font-medium text-md">Randomization Options</h3>
+
+                                            <FormField
+                                                control={control}
+                                                name="randomizeQuestions"
+                                                render={({ field }) => (
+                                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                                                        <div className="space-y-0.5">
+                                                            <FormLabel>Randomize Questions</FormLabel>
+                                                            <FormDescription>
+                                                                Shuffle the order of questions each time the quiz is taken
+                                                            </FormDescription>
+                                                        </div>
+                                                        <FormControl>
+                                                            <Switch
+                                                                checked={field.value}
+                                                                onCheckedChange={field.onChange}
+                                                            />
+                                                        </FormControl>
+                                                    </FormItem>
+                                                )}
+                                            />
+
+                                            <FormField
+                                                control={control}
+                                                name="randomizeOptions"
+                                                render={({ field }) => (
+                                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                                                        <div className="space-y-0.5">
+                                                            <FormLabel>Randomize Options</FormLabel>
+                                                            <FormDescription>
+                                                                Shuffle the order of answer options within each question.
+                                                                Only the first N options (set by &quot;Number of Options&quot;) will be shown to students.
+                                                            </FormDescription>
+                                                        </div>
+                                                        <FormControl>
+                                                            <Switch
+                                                                checked={field.value}
+                                                                onCheckedChange={field.onChange}
+                                                            />
+                                                        </FormControl>
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        </div>
                                     </CardContent>
                                     <CardFooter>
                                         <Button
@@ -581,90 +698,237 @@ export default function EditQuizPage({ params }: { params: Promise<{ id: string 
                                                         )}
                                                     />
 
-                                                    <div className="space-y-2">
-                                                        <FormLabel>Options</FormLabel>
-                                                        {quizForm.watch(`questions.${questionIndex}.options`)?.map((_, optionIndex) => (
-                                                            <div key={optionIndex} className="flex gap-4 items-start">
-                                                                <FormField
-                                                                    control={control}
-                                                                    name={`questions.${questionIndex}.options.${optionIndex}.isCorrect`}
-                                                                    render={({ field }) => (
-                                                                        <FormItem className="flex flex-row items-center space-x-2 space-y-0 mt-4">
-                                                                            <FormControl>
-                                                                                <Checkbox
-                                                                                    checked={field.value}
-                                                                                    onCheckedChange={(checked) => {
-                                                                                        field.onChange(checked);
-                                                                                        // For single-choice, uncheck other options
-                                                                                        if (quizForm.watch(`questions.${questionIndex}.questionType`) === 'single-choice' && checked) {
-                                                                                            quizForm.watch(`questions.${questionIndex}.options`).forEach((_, idx) => {
-                                                                                                if (idx !== optionIndex) {
-                                                                                                    quizForm.setValue(`questions.${questionIndex}.options.${idx}.isCorrect`, false);
-                                                                                                } else {
-                                                                                                    // Set the correct answer
-                                                                                                    const option = quizForm.watch(`questions.${questionIndex}.options.${optionIndex}`);
-                                                                                                    quizForm.setValue(`questions.${questionIndex}.answer`, option);
-                                                                                                }
-                                                                                            });
-                                                                                        }
-                                                                                    }}
-                                                                                />
-                                                                            </FormControl>
-                                                                            <FormLabel>Correct</FormLabel>
-                                                                        </FormItem>
-                                                                    )}
-                                                                />
+                                                    <FormField
+                                                        control={control}
+                                                        name={`questions.${questionIndex}.questionAudio`}
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel>Audio URL (Optional)</FormLabel>
+                                                                <FormControl>
+                                                                    <Input placeholder="Enter audio URL" {...field} />
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
 
-                                                                <div className="flex-1">
-                                                                    <FormField
-                                                                        control={control}
-                                                                        name={`questions.${questionIndex}.options.${optionIndex}.option`}
-                                                                        render={({ field }) => (
-                                                                            <FormItem>
-                                                                                <FormControl>
-                                                                                    <Input placeholder={`Option ${optionIndex + 1}`} {...field} />
-                                                                                </FormControl>
-                                                                                <FormMessage />
-                                                                            </FormItem>
+                                                    <FormField
+                                                        control={control}
+                                                        name={`questions.${questionIndex}.questionVideo`}
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel>Video URL (Optional)</FormLabel>
+                                                                <FormControl>
+                                                                    <Input placeholder="Enter video URL" {...field} />
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+
+                                                    <div className="space-y-2">
+                                                        <div className="flex justify-between items-center">
+                                                            <FormLabel>Option Sets</FormLabel>
+                                                            <Button
+                                                                type="button"
+                                                                variant="outline"
+                                                                size="sm"
+                                                                onClick={() => {
+                                                                    const currentSets = [...quizForm.getValues(`questions.${questionIndex}.optionSets`) || []];
+                                                                    quizForm.setValue(`questions.${questionIndex}.optionSets`, [
+                                                                        ...currentSets,
+                                                                        {
+                                                                            id: uuidv4(),
+                                                                            options: [
+                                                                                { id: uuidv4(), option: "", isCorrect: false },
+                                                                                { id: uuidv4(), option: "", isCorrect: false }
+                                                                            ],
+                                                                            answer: []
+                                                                        }
+                                                                    ]);
+                                                                }}
+                                                            >
+                                                                <Plus className="h-4 w-4 mr-2" />
+                                                                Add Option Set
+                                                            </Button>
+                                                        </div>
+
+                                                        <FormDescription>
+                                                            Add option sets for the question. Each set can contain different options.
+                                                        </FormDescription>
+
+                                                        <FormField
+                                                            control={control}
+                                                            name={`questions.${questionIndex}.activeSetIndex`}
+                                                            render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormLabel>Active Option Set</FormLabel>
+                                                                    <Select
+                                                                        onValueChange={(value) => field.onChange(Number(value))}
+                                                                        value={String(field.value || 0)}
+                                                                    >
+                                                                        <FormControl>
+                                                                            <SelectTrigger>
+                                                                                <SelectValue placeholder="Select active set" />
+                                                                            </SelectTrigger>
+                                                                        </FormControl>
+                                                                        <SelectContent>
+                                                                            {quizForm.watch(`questions.${questionIndex}.optionSets`)?.map((_, setIndex) => (
+                                                                                <SelectItem key={setIndex} value={String(setIndex)}>
+                                                                                    Set {setIndex + 1}
+                                                                                </SelectItem>
+                                                                            ))}
+                                                                        </SelectContent>
+                                                                    </Select>
+                                                                    <FormDescription>
+                                                                        The active set will be used when displaying the question
+                                                                    </FormDescription>
+                                                                </FormItem>
+                                                            )}
+                                                        />
+
+                                                        {quizForm.watch(`questions.${questionIndex}.optionSets`)?.map((optionSet, setIndex) => (
+                                                            <div
+                                                                key={setIndex}
+                                                                className={`border rounded-md p-4 mb-4 ${(quizForm.watch(`questions.${questionIndex}.activeSetIndex`) || 0) === setIndex
+                                                                    ? 'border-primary'
+                                                                    : ''
+                                                                    }`}
+                                                            >
+                                                                <div className="flex justify-between items-center mb-3">
+                                                                    <h4 className="text-sm font-medium">Option Set {setIndex + 1}</h4>
+                                                                    <div className="flex gap-2">
+                                                                        <Button
+                                                                            variant="outline"
+                                                                            size="sm"
+                                                                            type="button"
+                                                                            onClick={() => {
+                                                                                quizForm.setValue(`questions.${questionIndex}.activeSetIndex`, setIndex);
+                                                                            }}
+                                                                        >
+                                                                            Make Active
+                                                                        </Button>
+                                                                        {quizForm.watch(`questions.${questionIndex}.optionSets`)?.length > 1 && (
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="sm"
+                                                                                type="button"
+                                                                                onClick={() => {
+                                                                                    const currentSets = [...quizForm.getValues(`questions.${questionIndex}.optionSets`)];
+                                                                                    // Remove the set
+                                                                                    const newSets = currentSets.filter((_, idx) => idx !== setIndex);
+                                                                                    quizForm.setValue(`questions.${questionIndex}.optionSets`, newSets);
+
+                                                                                    // Update activeSetIndex if needed
+                                                                                    const currentActiveIndex = quizForm.getValues(`questions.${questionIndex}.activeSetIndex`);
+                                                                                    if (currentActiveIndex >= newSets.length) {
+                                                                                        quizForm.setValue(`questions.${questionIndex}.activeSetIndex`, 0);
+                                                                                    }
+                                                                                }}
+                                                                            >
+                                                                                <Trash2 className="h-4 w-4 mr-1" />
+                                                                                Remove Set
+                                                                            </Button>
                                                                         )}
-                                                                    />
+                                                                    </div>
                                                                 </div>
 
-                                                                {quizForm.watch(`questions.${questionIndex}.options`).length > 2 && (
-                                                                    <Button
-                                                                        variant="ghost"
-                                                                        size="icon"
-                                                                        type="button"
-                                                                        onClick={() => {
-                                                                            const currentOptions = quizForm.getValues(`questions.${questionIndex}.options`);
-                                                                            quizForm.setValue(
-                                                                                `questions.${questionIndex}.options`,
-                                                                                currentOptions.filter((_, idx) => idx !== optionIndex)
-                                                                            );
-                                                                        }}
-                                                                    >
-                                                                        <Trash2 className="h-4 w-4" />
-                                                                    </Button>
-                                                                )}
+                                                                {quizForm.watch(`questions.${questionIndex}.optionSets.${setIndex}.options`)?.map((option, optionIndex) => (
+                                                                    <div key={optionIndex} className="flex gap-4 items-start mb-2">
+                                                                        <FormField
+                                                                            control={control}
+                                                                            name={`questions.${questionIndex}.optionSets.${setIndex}.options.${optionIndex}.isCorrect`}
+                                                                            render={({ field }) => (
+                                                                                <FormItem className="flex flex-row items-center space-x-2 space-y-0 mt-4">
+                                                                                    <FormControl>
+                                                                                        <Checkbox
+                                                                                            checked={field.value}
+                                                                                            onCheckedChange={(checked) => {
+                                                                                                field.onChange(checked);
+
+                                                                                                const updatedOptions = quizForm.getValues(`questions.${questionIndex}.optionSets.${setIndex}.options`);
+                                                                                                const correctIds = updatedOptions
+                                                                                                    .filter(opt => opt.isCorrect)
+                                                                                                    .map(opt => opt.id || uuidv4())
+                                                                                                    .filter((id): id is string => id !== undefined);
+
+                                                                                                quizForm.setValue(
+                                                                                                    `questions.${questionIndex}.optionSets.${setIndex}.answer`,
+                                                                                                    correctIds
+                                                                                                );
+                                                                                            }}
+                                                                                        />
+                                                                                    </FormControl>
+                                                                                    <FormLabel>Correct</FormLabel>
+                                                                                </FormItem>
+                                                                            )}
+                                                                        />
+
+                                                                        <div className="flex-1">
+                                                                            <FormField
+                                                                                control={control}
+                                                                                name={`questions.${questionIndex}.optionSets.${setIndex}.options.${optionIndex}.option`}
+                                                                                render={({ field }) => (
+                                                                                    <FormItem>
+                                                                                        <FormControl>
+                                                                                            <Input placeholder={`Option ${optionIndex + 1}`} {...field} />
+                                                                                        </FormControl>
+                                                                                        <FormMessage />
+                                                                                    </FormItem>
+                                                                                )}
+                                                                            />
+                                                                        </div>
+
+                                                                        {quizForm.watch(`questions.${questionIndex}.optionSets.${setIndex}.options`)?.length > 2 && (
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="icon"
+                                                                                type="button"
+                                                                                onClick={() => {
+                                                                                    const currentOptions = [...quizForm.getValues(`questions.${questionIndex}.optionSets.${setIndex}.options`)];
+                                                                                    const filteredOptions = currentOptions.filter((_, idx) => idx !== optionIndex);
+
+                                                                                    quizForm.setValue(
+                                                                                        `questions.${questionIndex}.optionSets.${setIndex}.options`,
+                                                                                        filteredOptions
+                                                                                    );
+
+                                                                                    const correctIds = filteredOptions
+                                                                                        .filter(opt => opt.isCorrect)
+                                                                                        .map(opt => opt.id || uuidv4())
+                                                                                        .filter((id): id is string => id !== undefined);
+
+                                                                                    quizForm.setValue(
+                                                                                        `questions.${questionIndex}.optionSets.${setIndex}.answer`,
+                                                                                        correctIds
+                                                                                    );
+                                                                                }}
+                                                                            >
+                                                                                <Trash2 className="h-4 w-4" />
+                                                                            </Button>
+                                                                        )}
+                                                                    </div>
+                                                                ))}
+
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    className="mt-2"
+                                                                    onClick={() => {
+                                                                        const newOptionId = uuidv4();
+                                                                        const currentOptions = [...quizForm.getValues(`questions.${questionIndex}.optionSets.${setIndex}.options`)];
+                                                                        quizForm.setValue(
+                                                                            `questions.${questionIndex}.optionSets.${setIndex}.options`,
+                                                                            [...currentOptions, { id: newOptionId, option: "", isCorrect: false }]
+                                                                        );
+                                                                    }}
+                                                                >
+                                                                    <Plus className="h-4 w-4 mr-2" />
+                                                                    Add Option
+                                                                </Button>
                                                             </div>
                                                         ))}
-
-                                                        <Button
-                                                            type="button"
-                                                            variant="outline"
-                                                            size="sm"
-                                                            className="mt-2"
-                                                            onClick={() => {
-                                                                const currentOptions = quizForm.getValues(`questions.${questionIndex}.options`);
-                                                                quizForm.setValue(
-                                                                    `questions.${questionIndex}.options`,
-                                                                    [...currentOptions, { option: "", isCorrect: false }]
-                                                                );
-                                                            }}
-                                                        >
-                                                            <Plus className="h-4 w-4 mr-2" />
-                                                            Add Option
-                                                        </Button>
                                                     </div>
                                                 </CardContent>
                                             </CollapsibleContent>
@@ -682,12 +946,17 @@ export default function EditQuizPage({ params }: { params: Promise<{ id: string 
                                             questionImage: "",
                                             questionAudio: "",
                                             questionVideo: "",
-                                            questionType: "single-choice",
-                                            options: [
-                                                { option: "", isCorrect: false },
-                                                { option: "", isCorrect: false }
+                                            optionSets: [
+                                                {
+                                                    id: uuidv4(),
+                                                    options: [
+                                                        { id: uuidv4(), option: "", isCorrect: false },
+                                                        { id: uuidv4(), option: "", isCorrect: false }
+                                                    ],
+                                                    answer: []
+                                                }
                                             ],
-                                            answer: { option: "", isCorrect: false },
+                                            activeSetIndex: 0,
                                         });
 
                                         // Auto-open the new question
