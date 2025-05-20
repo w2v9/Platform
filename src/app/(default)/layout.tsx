@@ -31,8 +31,8 @@ const notoSansArabicBold = Noto_Sans_Arabic({
 
 
 export const metadata: Metadata = {
-  title: "Quiz app - AzoozGAT Platform",
-  description: "A quiz app for AzoozGAT platform",
+  title: "AzoozGAT Platform",
+  description: "A platform for AzoozGAT students",
 };
 
 export default function RootLayout({
