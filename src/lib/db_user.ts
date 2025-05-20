@@ -115,7 +115,7 @@ export async function registerUser(data: User, password: string) {
 
         auth.signOut();
 
-        loginUser('admin@azoozgat.com', '[7|jA#vL]0O%');
+        loginUser(process.env.NEXT_PUBLIC_ADMIN_EMAIL || '', process.env.NEXT_PUBLIC_ADMIN_PASSWORD || '');
 
         return userData;
     } catch (error) {
@@ -170,6 +170,7 @@ export async function loginUser(email: string, password: string) {
         };
 
         const updateData: any = {
+            status: "active",
             "metadata.lastLoginAt": new Date().toISOString(),
             "metadata.sessions": [...(userData.metadata.sessions || []), sessionData],
             "metadata.updatedAt": new Date().toISOString(),
@@ -225,8 +226,6 @@ export async function resetPasswordMail(email: string) {
 }
 
 export async function getUserById(userId: string): Promise<User | null> {
-    console.log("Fetching user data for ID:", userId);
-
     try {
         const docRef = doc(db, "users", userId);
         const docSnap = await getDoc(docRef);

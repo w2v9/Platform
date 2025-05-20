@@ -245,6 +245,7 @@ export default function EditQuizPage({ params }: { params: Promise<{ id: string 
             const updatedQuiz: Quiz = {
                 ...data,
                 id: data.id || quizId,
+                published: true,
                 updatedAt: new Date().toISOString(),
                 createdAt: data.createdAt || originalQuiz?.createdAt || new Date().toISOString(),
                 quizType: data.quizType || "normal",

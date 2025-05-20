@@ -288,6 +288,7 @@ export default function CreateQuizPage() {
             const quizWithIds: Quiz = {
                 ...data,
                 id: data.id || uuidv4(),
+                published: true,
                 createdAt: data.createdAt || new Date().toISOString(),
                 quizType: data.quizType || "normal",
                 questions: data.questions.map((question) => {

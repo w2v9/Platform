@@ -1,18 +1,35 @@
 import { db } from "./config/firebase-config";
 import { addDoc, collection, doc, getDocs, query, updateDoc, where, getDoc, deleteDoc } from "firebase/firestore";
 import type { Quiz } from "@/data/quiz";
+import { auth } from "./config/firebase-config";
+import { getUserById } from "./db_user";
 
 const COLLECTION_NAME = "quiz";
 
 export async function getQuizzes() {
     const quizzesRef = collection(db, COLLECTION_NAME);
     const quizzes: Quiz[] = [];
-    const querySnapshot = await getDocs(quizzesRef);
-    querySnapshot.forEach((doc) => {
-        quizzes.push(doc.data() as Quiz);
-    });
 
-    return quizzes;
+    try {
+        const currentUser = auth.currentUser;
+        const isAdmin = currentUser ?
+            await getUserById(currentUser.uid).then(user => user?.role === 'admin') :
+            false;
+
+        const q = isAdmin
+            ? query(quizzesRef)
+            : query(quizzesRef, where("published", "==", true));
+
+        const querySnapshot = await getDocs(q);
+        querySnapshot.forEach((doc) => {
+            quizzes.push({ id: doc.id, ...doc.data() } as Quiz);
+        });
+
+        return quizzes;
+    } catch (error) {
+        console.error("Error fetching quizzes:", error);
+        return [];
+    }
 }
 
 export async function getQuizById(id: string): Promise<Quiz | null> {

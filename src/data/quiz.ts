@@ -9,6 +9,7 @@ export type Quiz = {
     updatedAt?: string
     randomizeQuestions: boolean
     randomizeOptions: boolean
+    published: boolean
 }
 
 export type Question = {
