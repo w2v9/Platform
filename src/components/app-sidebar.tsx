@@ -48,7 +48,7 @@ export function AppSidebar({ items, user }: { items: SidebarItem[], user: User |
                                     <span className="truncate font-semibold">
                                         AzoozGAT Platform
                                     </span>
-                                    <span className="truncate text-xs">Quiz App</span>
+                                    <span className="truncate text-xs">AzoozGAT Platform</span>
                                 </div>
                             </SidebarMenuButton>
                         </SidebarMenuItem>
