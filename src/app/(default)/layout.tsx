@@ -41,20 +41,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} ${notoSansArabic.variable} ${notoSansArabicBold.variable} antialiased`}
-      >
-        <AuthProvider>
+    <AuthProvider>
 
-          <main className="flex flex-col min-h-screen justify-center" >
-            <Navbar />
-            {children}
-            <Footer />
-          </main>
-          <Toaster />
-        </AuthProvider>
-      </body>
-    </html>
+      <main className="flex flex-col min-h-screen justify-center" >
+        <Navbar />
+        {children}
+        <Footer />
+      </main>
+      <Toaster />
+    </AuthProvider>
   );
 }

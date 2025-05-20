@@ -35,12 +35,20 @@ export async function getQuizzes() {
 export async function getQuizById(id: string): Promise<Quiz | null> {
     const quizzesRef = collection(db, COLLECTION_NAME);
     let quiz: Quiz | null = null;
-    const q = query(quizzesRef, where("id", "==", id));
-    const querySnapshot = await getDocs(q);
-    querySnapshot.forEach((doc) => {
-        quiz = doc.data() as Quiz;
-    });
-    return quiz;
+    try {
+
+        const q = query(quizzesRef, where("id", "==", id), where("published", "==", true));
+
+        const querySnapshot = await getDocs(q);
+        querySnapshot.forEach((doc) => {
+            quiz = { id: doc.id, ...doc.data() } as Quiz;
+        });
+
+        return quiz;
+    } catch (error) {
+        console.error("Error fetching quizzes:", error);
+        return null;
+    }
 }
 
 export function createQuiz(quiz: Quiz) {

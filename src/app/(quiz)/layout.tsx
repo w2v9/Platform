@@ -26,15 +26,11 @@ export default function QuizLayout({
     children: React.ReactNode;
 }) {
     return (
-        <html lang="en">
-            <body className={`${geistSans.variable} ${geistMono.variable} ${notoSansArabic.variable} antialiased`}>
-                <main className="flex-grow container mx-auto p-4">
-                    <AuthProvider>
-                        <Toaster />
-                        {children}
-                    </AuthProvider>
-                </main>
-            </body>
-        </html>
+        <main className="flex-grow container mx-auto p-4">
+            <AuthProvider>
+                <Toaster />
+                {children}
+            </AuthProvider>
+        </main>
     );
 }

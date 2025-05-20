@@ -4,8 +4,6 @@ import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/context/authContext"
 import { getUserById } from "@/lib/db_user"
 import { Loader2 } from "lucide-react"
-import { toast } from "sonner"
-import { auth } from "@/lib/config/firebase-config"
 
 
 export default function Dashboard() {
@@ -29,7 +27,7 @@ export default function Dashboard() {
 
                 if (!userData) {
                     console.error("User data not found in database")
-                    router.push('/auth/login')
+                    router.push('/login')
                     return
                 }
 

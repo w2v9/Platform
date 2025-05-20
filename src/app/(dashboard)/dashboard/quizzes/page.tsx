@@ -86,13 +86,7 @@ export default function Quizzes() {
             description: "Create a new quiz",
             icon: () => <FilePlus />,
             action: '/dashboard/quizzes/create',
-        },
-        {
-            title: "Edit Quizzes",
-            description: "Eid a quiz",
-            icon: () => <SquarePen />,
-            action: '/dashboard/quizzes/edit',
-        },
+        }
     ]
 
     const columns: ColumnDef<Quiz>[] = [
