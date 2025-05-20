@@ -29,9 +29,9 @@ export default function Home() {
           priority
         />
         <div className="flex flex-col items-start justify-center gap-2 ">
-          <h1 className="text-4xl font-bold text-gray-800">Welcome to our Quiz App</h1>
+          <h1 className="text-4xl font-bold text-gray-800">Welcome to AzoozGAT Platform</h1>
           <p className="mt-2 text-lg text-gray-600 max-w-[80vw] md:max-w-[40vw] lg:max-w-[40vw]">
-            Your one-stop solution for creating and taking quizzes. Please login using your credentials to continue.
+            Please login using your credentials to continue.
           </p>
           <div>
             <Button variant={"primary"}>
