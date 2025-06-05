@@ -48,8 +48,64 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
     const unwrappedParams = use(params);
     const quizId = unwrappedParams.id;
     const [quizData, setQuizData] = useState<Quiz>();
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(true); const [error, setError] = useState<string | null>(null);
+
+    function prepareQuizForTaking(quiz: Quiz): Quiz {
+        if (!quiz) return quiz;
+
+        let preparedQuestions = [...quiz.questions];
+
+        if (quiz.randomizeQuestions) {
+            preparedQuestions = shuffleArray(preparedQuestions);
+        }
+
+        preparedQuestions = preparedQuestions.map(question => {
+            if (question.optionSets && question.optionSets.length > 1) {
+                const randomIndex = Math.floor(Math.random() * question.optionSets.length);
+                return {
+                    ...question,
+                    selectedSetIndex: randomIndex
+                };
+            }
+            return {
+                ...question,
+                selectedSetIndex: question.activeSetIndex || 0
+            };
+        });
+
+        if (quiz.randomizeOptions) {
+            preparedQuestions = preparedQuestions.map(question => {
+                const optionSets = question.optionSets.map((set, index) => {
+                    if (index === question.selectedSetIndex || index === question.activeSetIndex) {
+                        return {
+                            ...set,
+                            options: shuffleArray(set.options)
+                        };
+                    }
+                    return set;
+                });
+
+                return {
+                    ...question,
+                    optionSets
+                };
+            });
+        }
+
+        return {
+            ...quiz,
+            questions: preparedQuestions
+        };
+    }
+
+    function shuffleArray<T>(array: T[]): T[] {
+        const newArray = [...array];
+        for (let i = newArray.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+        }
+        return newArray;
+    }
 
     useEffect(() => {
         const fetchQuiz = async () => {
@@ -111,63 +167,6 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
             document.removeEventListener('selectstart', handleSelectStart);
         };
     }, [quizId]);
-
-    function prepareQuizForTaking(quiz: Quiz): Quiz {
-        if (!quiz) return quiz;
-
-        let preparedQuestions = [...quiz.questions];
-
-        if (quiz.randomizeQuestions) {
-            preparedQuestions = shuffleArray(preparedQuestions);
-        }
-
-        preparedQuestions = preparedQuestions.map(question => {
-            if (question.optionSets && question.optionSets.length > 1) {
-                const randomIndex = Math.floor(Math.random() * question.optionSets.length);
-                return {
-                    ...question,
-                    selectedSetIndex: randomIndex
-                };
-            }
-            return {
-                ...question,
-                selectedSetIndex: question.activeSetIndex || 0
-            };
-        });
-
-        if (quiz.randomizeOptions) {
-            preparedQuestions = preparedQuestions.map(question => {
-                const optionSets = question.optionSets.map((set, index) => {
-                    if (index === question.selectedSetIndex || index === question.activeSetIndex) {
-                        return {
-                            ...set,
-                            options: shuffleArray(set.options)
-                        };
-                    }
-                    return set;
-                });
-
-                return {
-                    ...question,
-                    optionSets
-                };
-            });
-        }
-
-        return {
-            ...quiz,
-            questions: preparedQuestions
-        };
-    }
-
-    function shuffleArray<T>(array: T[]): T[] {
-        const newArray = [...array];
-        for (let i = newArray.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
-        }
-        return newArray;
-    }
 
     if (isLoading) {
         return (

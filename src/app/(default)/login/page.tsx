@@ -90,42 +90,45 @@ export default function LoginPage() {
             success: null,
             error: null,
         });
-    }
-
-    return (
-        <section className="py-4 px-4 flex flex-col items-center justify-center min-h-[70vh] ">
-            <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="w-full max-w-md md:w-1/3 lg:w-1/3 mx-auto mt-10">
-                    <FormField
-                        control={form.control}
-                        name="email"
-                        render={({ field }) => (
-                            <FormItem className="mb-4">
-                                <FormLabel>Username</FormLabel>
-                                <FormControl>
-                                    <Input placeholder="Enter your email" {...field} />
-                                </FormControl>
-                                <FormDescription>Enter your email.</FormDescription>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="password"
-                        render={({ field }) => (
-                            <FormItem className="mb-4">
-                                <FormLabel>Password</FormLabel>
-                                <FormControl>
-                                    <Input type="password" placeholder="Enter your password" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <Button type="submit" className="w-full" disabled={isSubmitting}>Login</Button>
-                </form>
-            </Form>
+    } return (
+        <section className="py-4 px-4 flex flex-col items-center justify-center min-h-[70vh]">
+            <div className="w-full max-w-md mx-auto bg-card border rounded-lg shadow-sm p-4 sm:p-6 md:p-8">
+                <h1 className="text-2xl font-bold text-center mb-6">Login to AzoozGAT</h1>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                        <FormField
+                            control={form.control}
+                            name="email"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Email</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="Enter your email" {...field} />
+                                    </FormControl>
+                                    <FormDescription className="text-xs">Enter your email address.</FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="password"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Password</FormLabel>
+                                    <FormControl>
+                                        <Input type="password" placeholder="Enter your password" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <Button type="submit" className="w-full mt-4" disabled={isSubmitting}>
+                            {isSubmitting ? "Signing in..." : "Sign in"}
+                        </Button>
+                    </form>
+                </Form>
+            </div>
         </section>
     )
 }

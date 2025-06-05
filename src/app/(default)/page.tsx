@@ -17,29 +17,27 @@ export default function Home() {
       router.push('/dashboard')
     };
   }, [user, router]);
-
   return (
-    <div className="flex flex-row md:flex-col lg:flex-col items-center justify-between p-8 md:p-16 lg:p-24">
-      <div className="flex md:flex-row lg:flex-row flex-col items-center">
-        <Image
-          src="/images/logo.png"
-          alt="Next.js Logo"
-          width={300}
-          height={300}
-          priority
-        />
-        <div className="flex flex-col items-start justify-center gap-2 ">
-          <h1 className="text-4xl font-bold text-gray-800">Welcome to AzoozGAT Platform</h1>
-          <p className="mt-2 text-lg text-gray-600 max-w-[80vw] md:max-w-[40vw] lg:max-w-[40vw]">
-            Please login using your credentials to continue.
+    <div className="flex flex-col items-center justify-center p-4 sm:p-8 md:p-16 min-h-[80vh]">
+      <div className="flex flex-col md:flex-row items-center gap-6 md:gap-12 max-w-6xl mx-auto">
+        <div className="w-full md:w-1/2 flex justify-center">
+          <Image
+            src="/images/logo.png"
+            alt="AzoozGAT Logo"
+            width={250}
+            height={250}
+            priority
+            className="w-48 sm:w-64 md:w-80"
+          />
+        </div>
+        <div className="w-full md:w-1/2 flex flex-col items-center md:items-start justify-center gap-4 text-center md:text-left">
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-800">Welcome to AzoozGAT Platform</h1>
+          <p className="text-base sm:text-lg text-gray-600 max-w-md">
+            Please login using your credentials to continue to the quiz platform.
           </p>
-          <div>
-            <Button variant={"primary"}>
-              <CustomLink href="/login" className="cursor-pointer">
-                Login
-              </CustomLink>
-            </Button>
-          </div>
+          <Button variant={"default"} size="lg" className="mt-2" onClick={() => router.push('/login')}>
+            Sign in
+          </Button>
         </div>
       </div>
     </div>

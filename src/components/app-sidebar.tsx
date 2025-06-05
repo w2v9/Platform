@@ -34,8 +34,7 @@ export function AppSidebar({ items, user }: { items: SidebarItem[], user: User |
                             <SidebarMenuButton
                                 size="lg"
                                 className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-                            >
-                                <div className="flex aspect-square size-8 items-center justify-center rounded-lg text-sidebar-primary-foreground">
+                            >                                <div className="flex aspect-square size-6 sm:size-8 items-center justify-center rounded-lg text-sidebar-primary-foreground">
                                     <Image
                                         src="/images/logo.png"
                                         alt="Logo"
@@ -44,11 +43,11 @@ export function AppSidebar({ items, user }: { items: SidebarItem[], user: User |
                                         className="rounded-full object-cover"
                                     />
                                 </div>
-                                <div className="grid flex-1 text-left text-sm leading-tight">
+                                <div className="grid flex-1 text-left text-xs sm:text-sm leading-tight">
                                     <span className="truncate font-semibold">
-                                        AzoozGAT Platform
+                                        AzoozGAT
                                     </span>
-                                    <span className="truncate text-xs">AzoozGAT Platform</span>
+                                    <span className="truncate text-xs hidden sm:block">Platform</span>
                                 </div>
                             </SidebarMenuButton>
                         </SidebarMenuItem>

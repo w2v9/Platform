@@ -1,0 +1,44 @@
+@layer utilities {
+    .responsive-grid {
+        @apply grid gap-4;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+    }
+
+    .responsive-grid-sm {
+        @apply grid gap-3;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+    }
+
+    .responsive-flex {
+        @apply flex flex-col md:flex-row gap-4;
+    }
+
+    .responsive-p {
+        @apply p-3 sm:p-4 md:p-6;
+    }
+
+    .responsive-text {
+        @apply text-sm sm:text-base md:text-lg;
+    }
+
+    .responsive-text-sm {
+        @apply text-xs sm:text-sm md:text-base;
+    }
+
+    /* Responsive spacing helpers */
+    .responsive-gap {
+        @apply gap-2 sm:gap-3 md:gap-4;
+    }
+
+    .responsive-my {
+        @apply my-2 sm:my-3 md:my-4;
+    }
+
+    .responsive-px {
+        @apply px-2 sm:px-4 md:px-6;
+    }
+
+    .responsive-py {
+        @apply py-2 sm:py-3 md:py-4;
+    }
+}

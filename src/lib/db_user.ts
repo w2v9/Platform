@@ -89,6 +89,8 @@ export async function registerUser(data: User, password: string) {
     try {
 
         const userCredential = await createUserWithEmailAndPassword(auth, data.email, password);
+        await sendPasswordResetEmail(auth, data.email);
+
         const user = userCredential.user;
 
         const { displayName, email } = data;

@@ -1,0 +1,565 @@
+/* Advanced animations for AzoozGAT Platform Quiz Component */
+
+/* Morphing shapes background animation */
+.quiz-morphing-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -1;
+    overflow: hidden;
+    opacity: 0.4;
+}
+
+.quiz-morphing-shape {
+    position: absolute;
+    background: linear-gradient(45deg, rgba(59, 130, 246, 0.2), rgba(16, 185, 129, 0.2));
+    border-radius: 50%;
+    filter: blur(80px);
+    animation: morph 25s ease-in-out infinite alternate;
+    transform-origin: center;
+    opacity: 0.7;
+}
+
+.quiz-morphing-shape:nth-child(1) {
+    top: -5%;
+    left: -5%;
+    width: 40%;
+    height: 40%;
+    animation-delay: 0s;
+}
+
+.quiz-morphing-shape:nth-child(2) {
+    bottom: -10%;
+    right: -5%;
+    width: 50%;
+    height: 50%;
+    animation-delay: -5s;
+}
+
+.quiz-morphing-shape:nth-child(3) {
+    top: 45%;
+    left: 45%;
+    width: 30%;
+    height: 30%;
+    animation-delay: -12s;
+}
+
+@keyframes morph {
+    0% {
+        border-radius: 40% 60% 60% 40% / 60% 30% 70% 40%;
+    }
+
+    50% {
+        border-radius: 40% 60% 70% 30% / 50% 60% 30% 60%;
+    }
+
+    100% {
+        border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+    }
+}
+
+/* Floating animation for UI elements */
+.quiz-float {
+    animation: float 8s ease-in-out infinite;
+    transform-origin: center;
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0) rotate(0deg);
+    }
+
+    25% {
+        transform: translateY(-5px) rotate(1deg);
+    }
+
+    50% {
+        transform: translateY(0) rotate(0deg);
+    }
+
+    75% {
+        transform: translateY(5px) rotate(-1deg);
+    }
+}
+
+/* Enhanced 3D perspective for card transitions */
+.quiz-perspective-container {
+    perspective: 2000px;
+    perspective-origin: center;
+}
+
+.quiz-3d-card {
+    transform-style: preserve-3d;
+    transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    backface-visibility: hidden;
+}
+
+.quiz-3d-card-flip-in {
+    animation: card3dFlipIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.quiz-3d-card-flip-out {
+    animation: card3dFlipOut 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes card3dFlipIn {
+    from {
+        transform: rotateY(90deg) translateZ(100px);
+        opacity: 0;
+    }
+
+    to {
+        transform: rotateY(0) translateZ(0);
+        opacity: 1;
+    }
+}
+
+@keyframes card3dFlipOut {
+    from {
+        transform: rotateY(0) translateZ(0);
+        opacity: 1;
+    }
+
+    to {
+        transform: rotateY(-90deg) translateZ(100px);
+        opacity: 0;
+    }
+}
+
+/* Staggered content reveal for question text */
+.quiz-reveal-text {
+    overflow: hidden;
+}
+
+.quiz-reveal-text span {
+    display: inline-block;
+    opacity: 0;
+    transform: translateY(10px);
+    animation: revealText 0.6s cubic-bezier(0.5, 0, 0.1, 1) forwards;
+}
+
+@keyframes revealText {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Create a sequenced delay for each letter */
+.quiz-reveal-text span:nth-child(1) {
+    animation-delay: 0.05s;
+}
+
+.quiz-reveal-text span:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.quiz-reveal-text span:nth-child(3) {
+    animation-delay: 0.15s;
+}
+
+.quiz-reveal-text span:nth-child(4) {
+    animation-delay: 0.2s;
+}
+
+.quiz-reveal-text span:nth-child(5) {
+    animation-delay: 0.25s;
+}
+
+/* Continue pattern for more letters */
+
+/* Liquid button effect for navigation */
+.quiz-liquid-button {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.quiz-liquid-button::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 300px;
+    height: 300px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 40%;
+    transform: translate3d(-50%, -50%, 0) scale(0);
+    transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.quiz-liquid-button:hover::before {
+    transform: translate3d(-50%, -50%, 0) scale(1.5);
+}
+
+/* Magnetic hover effect for buttons and interactive elements */
+.quiz-magnetic {
+    position: relative;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform-style: preserve-3d;
+}
+
+/* Enhanced confetti celebration for correct answers */
+.quiz-confetti-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 100;
+    overflow: hidden;
+}
+
+.quiz-confetti {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background-color: #3b82f6;
+    opacity: 0;
+    animation: confetti 5s ease-in-out forwards;
+    transform-origin: center;
+}
+
+.quiz-confetti:nth-child(even) {
+    background-color: #10b981;
+}
+
+.quiz-confetti:nth-child(3n) {
+    background-color: #f59e0b;
+}
+
+.quiz-confetti:nth-child(4n) {
+    background-color: #ef4444;
+}
+
+.quiz-confetti:nth-child(5n) {
+    background-color: #8b5cf6;
+}
+
+@keyframes confetti {
+    0% {
+        transform: translateY(-10px) rotate(0deg);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translateY(calc(100vh + 10px)) rotate(720deg);
+        opacity: 0;
+    }
+}
+
+/* Snow effect for background ambiance */
+.quiz-snow-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: -1;
+    overflow: hidden;
+}
+
+.quiz-snow {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background-color: white;
+    border-radius: 50%;
+    opacity: 0.8;
+    animation: snow 15s linear infinite;
+}
+
+@keyframes snow {
+    0% {
+        transform: translateY(-10px) translateX(0);
+        opacity: 0;
+    }
+
+    10% {
+        opacity: 0.8;
+    }
+
+    90% {
+        opacity: 0.8;
+    }
+
+    100% {
+        transform: translateY(calc(100vh + 10px)) translateX(100px);
+        opacity: 0;
+    }
+}
+
+/* Advanced hover effects for quiz options */
+.quiz-option-advanced {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.quiz-option-advanced::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.6s ease;
+}
+
+.quiz-option-advanced:hover::before {
+    transform: translateX(100%);
+}
+
+.quiz-option-advanced:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Text shadow animation for important text */
+.quiz-text-glow {
+    animation: textGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes textGlow {
+    from {
+        text-shadow: 0 0 5px rgba(59, 130, 246, 0);
+    }
+
+    to {
+        text-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+    }
+}
+
+/* Enhanced success animation for completed actions */
+.quiz-success {
+    position: relative;
+    overflow: hidden;
+}
+
+.quiz-success::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(16, 185, 129, 0.2) 0%, transparent 70%);
+    opacity: 0;
+    animation: successPulse 1.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes successPulse {
+    0% {
+        transform: scale(0.1);
+        opacity: 0;
+    }
+
+    30% {
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 0;
+    }
+}
+
+/* Parallax scrolling effect for background elements */
+.quiz-parallax-container {
+    position: relative;
+    overflow: hidden;
+}
+
+.quiz-parallax-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    will-change: transform;
+    transition: transform 0.1s ease-out;
+}
+
+/* Handwriting text effect */
+.quiz-handwriting {
+    font-family: 'Caveat', cursive, sans-serif;
+    opacity: 0;
+    animation: handwriting 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes handwriting {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* Bouncing dots loading animation */
+.quiz-bouncing-loader {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.quiz-bouncing-loader>div {
+    width: 10px;
+    height: 10px;
+    margin: 0 5px;
+    border-radius: 50%;
+    background-color: #3b82f6;
+    animation: bouncingLoader 0.6s infinite alternate;
+}
+
+.quiz-bouncing-loader>div:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.quiz-bouncing-loader>div:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes bouncingLoader {
+    to {
+        transform: translateY(-10px);
+    }
+}
+
+/* Celebration animation for completing the quiz */
+.quiz-celebration {
+    position: relative;
+}
+
+.quiz-celebration::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at center, rgba(59, 130, 246, 0.2) 0%, transparent 70%);
+    animation: celebrationPulse 2s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+}
+
+@keyframes celebrationPulse {
+
+    0%,
+    100% {
+        transform: scale(0.8);
+        opacity: 0.3;
+    }
+
+    50% {
+        transform: scale(1.2);
+        opacity: 0.1;
+    }
+}
+
+/* Advanced progress bar with animated gradient */
+.quiz-progress-advanced {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(90deg, #f0f9ff 0%, #e0f2fe 100%);
+    z-index: 1;
+}
+
+.quiz-progress-advanced::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%);
+    transform-origin: left;
+    z-index: -1;
+    transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.quiz-progress-advanced::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 50px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    animation: progressAdvancedShine 2s infinite;
+    z-index: 2;
+}
+
+@keyframes progressAdvancedShine {
+    from {
+        transform: translateX(-100%);
+    }
+
+    to {
+        transform: translateX(500%);
+    }
+}
+
+/* Particle effect for interactive buttons */
+.quiz-particle-button {
+    position: relative;
+    overflow: hidden;
+}
+
+.quiz-particle {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    background-color: rgba(59, 130, 246, 0.8);
+    border-radius: 50%;
+    pointer-events: none;
+    opacity: 0;
+    animation: particles 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes particles {
+    0% {
+        opacity: 1;
+        transform: translate(0, 0);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translate(var(--x), var(--y));
+    }
+}
+
+/* Focus spotlight effect */
+.quiz-spotlight {
+    position: relative;
+    overflow: hidden;
+}
+
+.quiz-spotlight::after {
+    content: "";
+    position: absolute;
+    top: var(--y, 0);
+    left: var(--x, 0);
+    width: 80px;
+    height: 80px;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.quiz-spotlight:hover::after {
+    opacity: 1;
+}

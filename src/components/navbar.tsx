@@ -1,8 +1,8 @@
 'use client';
-import React from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import CustomLink from "./Link";
-import { User, UserIcon, Settings, LogOutIcon, LayoutDashboard, LogInIcon } from "lucide-react";
+import { User, UserIcon, Settings, LogOutIcon, LayoutDashboard, LogInIcon, Menu, X } from "lucide-react";
 import {
     DropdownMenu,
     DropdownMenuTrigger,
@@ -16,16 +16,14 @@ import { useAuth } from "@/lib/context/authContext";
 import { signOut } from "@/lib/config/firebase-config";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-
-
-
-
+import { useBreakpoint } from "@/hooks/use-breakpoint";
+import { Button } from "./ui/button";
 
 const Navbar: React.FC = () => {
     const { user, loading } = useAuth();
     const router = useRouter();
-
-    const logout = async () => {
+    const { isMobile } = useBreakpoint();
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false); const logout = async () => {
         try {
             await signOut();
             router.push("/");
@@ -38,12 +36,26 @@ const Navbar: React.FC = () => {
     };
 
     return (
-        <nav className="flex justify-between items-center px-8 py-4 ">
-            <div className="flex items-center text-2xl font-bold">
-                <Image src="/images/logo.png" alt="Logo" width={50} height={50} className="mr-2" />
-                <CustomLink href={'/'}>Quiz App</CustomLink>
+        <nav className="sticky top-0 z-50 flex flex-wrap justify-between items-center px-4 md:px-8 py-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
+            <div className="flex items-center text-xl md:text-2xl font-bold">
+                <Image src="/images/logo.png" alt="Logo" width={40} height={40} className="mr-2" />
+                <CustomLink href={'/'} className="hidden sm:block">AzoozGAT Platform</CustomLink>
             </div>
-            <div className="flex items-center space-x-4">
+
+            {/* Mobile menu button */}
+            {isMobile && (
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                    className="md:hidden"
+                >
+                    {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                </Button>
+            )}
+
+            {/* Desktop navigation */}
+            <div className={`${isMobile ? (mobileMenuOpen ? 'flex flex-col w-full mt-4' : 'hidden') : 'flex'} items-center space-x-4`}>
                 <DropdownMenu>
                     <DropdownMenuTrigger>
                         <div className="relative flex items-center justify-center w-10 h-10 rounded-full bg-gray-200 hover:bg-gray-300 cursor-pointer transition duration-200 ease-in-out">

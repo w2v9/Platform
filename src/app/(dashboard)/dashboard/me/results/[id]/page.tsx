@@ -160,45 +160,42 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                 </Card>
             </div>
         );
-    }
-
-    return (
-        <div className="container max-w-5xl mx-auto py-6 space-y-8">
+    } return (
+        <div className="container max-w-5xl mx-auto py-4 sm:py-6 px-4 sm:px-6 space-y-4 sm:space-y-8">
             {/* Report Summary Card */}
             <Card>
-                <CardHeader>
-                    <div className="flex justify-between items-center">
+                <CardHeader className="p-4 sm:p-6">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <div>
-                            <CardTitle className="text-2xl">{reportData.quizTitle}</CardTitle>
-                            <CardDescription>
+                            <CardTitle className="text-xl sm:text-2xl">{reportData.quizTitle}</CardTitle>
+                            <CardDescription className="text-sm">
                                 Completed on {new Date(reportData.dateTaken).toLocaleDateString()} by {reportData.userName}
                             </CardDescription>
                         </div>
                         <Badge
                             variant={reportData.percentageScore >= 70 ? "default" : "destructive"}
-                            className="text-lg h-8 px-3"
+                            className="text-base sm:text-lg h-7 sm:h-8 px-2 sm:px-3"
                         >
                             Score: {reportData.percentageScore.toFixed(0)}%
                         </Badge>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="flex flex-col items-center justify-center bg-muted p-4 rounded-lg">
-                            <BarChart3 className="h-8 w-8 text-primary mb-2" />
+                    </div>                </CardHeader>
+                <CardContent className="p-4 sm:p-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6">
+                        <div className="flex flex-col items-center justify-center bg-muted p-3 sm:p-4 rounded-lg">
+                            <BarChart3 className="h-6 w-6 sm:h-8 sm:w-8 text-primary mb-1 sm:mb-2" />
                             <div className="text-center">
-                                <p className="text-muted-foreground text-sm">Score</p>
-                                <p className="text-xl font-bold">
+                                <p className="text-muted-foreground text-xs sm:text-sm">Score</p>
+                                <p className="text-base sm:text-xl font-bold">
                                     {reportData.score} / {reportData.maxScore}
                                 </p>
                             </div>
                         </div>
 
-                        <div className="flex flex-col items-center justify-center bg-muted p-4 rounded-lg">
-                            <Clock className="h-8 w-8 text-primary mb-2" />
+                        <div className="flex flex-col items-center justify-center bg-muted p-3 sm:p-4 rounded-lg">
+                            <Clock className="h-6 w-6 sm:h-8 sm:w-8 text-primary mb-1 sm:mb-2" />
                             <div className="text-center">
-                                <p className="text-muted-foreground text-sm">Time Taken</p>
-                                <p className="text-xl font-bold">
+                                <p className="text-muted-foreground text-xs sm:text-sm">Time Taken</p>
+                                <p className="text-base sm:text-xl font-bold">
                                     {formatTime(reportData.timeTaken)}
                                 </p>
                             </div>

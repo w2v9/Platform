@@ -186,7 +186,7 @@ function RouteProtection({ children }: { children: React.ReactNode }) {
         <SidebarProvider>
             <AppSidebar items={getNavigationItems(userData?.role)} user={user} />
             <Toaster />
-            <main className="w-full flex-1 overflow-hidden bg-background">
+            <main className="w-full flex-1 overflow-auto bg-background">
                 {children}
             </main>
         </SidebarProvider>
