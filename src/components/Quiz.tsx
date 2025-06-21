@@ -4,11 +4,7 @@ import { Quiz, Option, OptionSet, Question } from "@/data/quiz";
 import { Button } from "@/components/ui/button"
 import '../app/quiz-animations.css'
 
-import {
-    ResizableHandle,
-    ResizablePanel,
-    ResizablePanelGroup,
-} from "@/components/ui/resizable"
+// Resizable panel imports removed
 
 import { Progress } from "@/components/ui/progress"
 import { Clock, FlagIcon, MoveLeft, MoveRight, Check, ListTodo } from "lucide-react";
@@ -441,138 +437,133 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
             {
                 currentQuestionIndex < quizData.questions.length && (
                     <div id="Question" className="flex-grow overflow-hidden">
-                        <div className={`quiz-page-transition ${isAnimating ? 'pointer-events-none' : ''}`}>
-                            <div className={`w-full h-full ${isAnimating ?
-                                (animationDirection === 'next' ? 'quiz-animate-next-in' : 'quiz-animate-prev-in') : ''}`}>
-                                <ResizablePanelGroup
-                                    direction={isDesktop ? "horizontal" : "vertical"}
-                                    className="h-full rounded-lg border"
-                                >
-                                    <ResizablePanel defaultSize={isDesktop ? 40 : 30} minSize={20}>
-                                        <div className="flex h-full items-center justify-center p-2 sm:p-4 md:p-6">
-                                            <ScrollArea className="h-full w-full">
+                        <div className={`quiz-page-transition ${isAnimating ? 'pointer-events-none' : ''}`}>                            <div className={`w-full h-full ${isAnimating ?
+                            (animationDirection === 'next' ? 'quiz-animate-next-in' : 'quiz-animate-prev-in') : ''}`}>
+                            <div className="flex flex-col md:flex-row h-full rounded-lg border">                                <div className="w-full md:w-[40%] h-full md:block hidden">
+                                <div className="flex h-full items-center justify-center p-2 sm:p-4 md:p-6">
+                                    <ScrollArea className="h-full w-full">
+                                        {isAnimating ? (
+                                            // Skeleton loading for explanation
+                                            <div className="space-y-4">
+                                                <div className="quiz-skeleton quiz-skeleton-title"></div>
+                                                <div className="quiz-skeleton quiz-skeleton-text"></div>
+                                                <div className="quiz-skeleton quiz-skeleton-text"></div>
+                                                <div className="quiz-skeleton quiz-skeleton-text"></div>
+                                                <div className="quiz-skeleton quiz-skeleton-text"></div>
+                                            </div>
+                                        ) : (<>
+                                            {isDesktop ? (
+                                                <>
+                                                    <h2 className="font-bold text-sm sm:text-base">Explanation:</h2>
+                                                    <div className="text-gray-700 text-xs sm:text-sm prose prose-sm max-w-none">
+                                                        <ReactMarkdown
+                                                            rehypePlugins={[rehypeSanitize]}
+                                                            remarkPlugins={[remarkGfm]}
+                                                        >
+                                                            {currentQuestion.explanation || ''}
+                                                        </ReactMarkdown>
+                                                    </div>
+                                                    {currentQuestion.questionImage && (
+                                                        <div className="mt-2 sm:mt-4">
+                                                            <Image
+                                                                src={currentQuestion.questionImage}
+                                                                alt="Question image"
+                                                                width={400}
+                                                                height={300}
+                                                                className="max-w-full rounded-md"
+                                                            />
+                                                        </div>
+                                                    )}
+                                                </>
+                                            ) : (
+                                                // On mobile, the explanation is shown via the info icon next to the question
+                                                <div className="flex items-center justify-center h-full">
+                                                    <p className="text-gray-500 text-sm text-center">
+                                                        Tap the info icon (ⓘ) next to the question to see the explanation.
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </>
+                                        )}
+                                    </ScrollArea>
+                                </div>
+                            </div>
+                                <div className="hidden md:block w-[1px] bg-gray-200 my-2"></div>
+                                <div className="w-full h-full">
+                                    <div className="h-full overflow-auto p-2 sm:p-4">
+                                        <div className="flex flex-col h-full gap-4">
+                                            <div className="py-2 sm:py-4">
                                                 {isAnimating ? (
-                                                    // Skeleton loading for explanation
+                                                    // Skeleton loading for question
+                                                    <div className="quiz-skeleton quiz-skeleton-title w-3/4"></div>) : (
+                                                    <div className="flex flex-row items-center gap-2">
+                                                        <h2 className="text-base sm:text-lg md:text-xl font-bold flex-grow">{currentQuestion.question}</h2>
+                                                        {!isDesktop && (
+                                                            <Dialog>
+                                                                <DialogTrigger asChild>
+                                                                    <Button variant="ghost" size="sm" className="rounded-full p-0 h-8 w-8 flex-shrink-0">
+                                                                        <InfoIcon size={16} className="text-blue-500" />
+                                                                    </Button>
+                                                                </DialogTrigger>
+                                                                <DialogContent className="max-w-md">
+                                                                    <DialogHeader>
+                                                                        <DialogTitle>Explanation</DialogTitle>
+                                                                    </DialogHeader>
+                                                                    <div className="text-gray-700 text-xs sm:text-sm prose prose-sm max-w-none">
+                                                                        <ReactMarkdown
+                                                                            rehypePlugins={[rehypeSanitize]}
+                                                                            remarkPlugins={[remarkGfm]}
+                                                                        >
+                                                                            {currentQuestion.explanation || ''}
+                                                                        </ReactMarkdown>
+                                                                    </div>
+                                                                    {currentQuestion.questionImage && (
+                                                                        <div className="mt-2 sm:mt-4">
+                                                                            <Image
+                                                                                src={currentQuestion.questionImage}
+                                                                                alt="Question image"
+                                                                                width={400}
+                                                                                height={300}
+                                                                                className="max-w-full rounded-md"
+                                                                            />
+                                                                        </div>
+                                                                    )}
+                                                                </DialogContent>
+                                                            </Dialog>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="h-[1px] bg-gray-200 w-full"></div>
+                                            <div className="py-2 sm:py-4 flex-1">
+                                                {isAnimating ? (
+                                                    // Skeleton loading for options
                                                     <div className="space-y-4">
-                                                        <div className="quiz-skeleton quiz-skeleton-title"></div>
-                                                        <div className="quiz-skeleton quiz-skeleton-text"></div>
-                                                        <div className="quiz-skeleton quiz-skeleton-text"></div>
-                                                        <div className="quiz-skeleton quiz-skeleton-text"></div>
-                                                        <div className="quiz-skeleton quiz-skeleton-text"></div>
+                                                        <div className="quiz-skeleton quiz-skeleton-option"></div>
+                                                        <div className="quiz-skeleton quiz-skeleton-option"></div>
+                                                        <div className="quiz-skeleton quiz-skeleton-option"></div>
+                                                        <div className="quiz-skeleton quiz-skeleton-option"></div>
                                                     </div>
                                                 ) : (
                                                     <>
-                                                        {isDesktop ? (
-                                                            <>
-                                                                <h2 className="font-bold text-sm sm:text-base">Explanation:</h2>
-                                                                <div className="text-gray-700 text-xs sm:text-sm prose prose-sm max-w-none">
-                                                                    <ReactMarkdown
-                                                                        rehypePlugins={[rehypeSanitize]}
-                                                                        remarkPlugins={[remarkGfm]}
-                                                                    >
-                                                                        {currentQuestion.explanation || ''}
-                                                                    </ReactMarkdown>
-                                                                </div>
-                                                                {currentQuestion.questionImage && (
-                                                                    <div className="mt-2 sm:mt-4">
-                                                                        <Image
-                                                                            src={currentQuestion.questionImage}
-                                                                            alt="Question image"
-                                                                            width={400}
-                                                                            height={300}
-                                                                            className="max-w-full rounded-md"
-                                                                        />
-                                                                    </div>
-                                                                )}
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <div className="flex items-center justify-center h-full">
-                                                                    <Dialog>
-                                                                        <DialogTrigger asChild>
-                                                                            <Button variant="ghost" size="icon" className="rounded-full">
-                                                                                <InfoIcon size={28} className="text-blue-500" />
-                                                                            </Button>
-                                                                        </DialogTrigger>
-                                                                        <DialogContent className="max-w-md">
-                                                                            <DialogHeader>
-                                                                                <DialogTitle>Explanation</DialogTitle>
-                                                                            </DialogHeader>
-                                                                            <div className="text-gray-700 text-xs sm:text-sm prose prose-sm max-w-none">
-                                                                                <ReactMarkdown
-                                                                                    rehypePlugins={[rehypeSanitize]}
-                                                                                    remarkPlugins={[remarkGfm]}
-                                                                                >
-                                                                                    {currentQuestion.explanation || ''}
-                                                                                </ReactMarkdown>
-                                                                            </div>
-                                                                            {currentQuestion.questionImage && (
-                                                                                <div className="mt-2 sm:mt-4">
-                                                                                    <Image
-                                                                                        src={currentQuestion.questionImage}
-                                                                                        alt="Question image"
-                                                                                        width={400}
-                                                                                        height={300}
-                                                                                        className="max-w-full rounded-md"
-                                                                                    />
-                                                                                </div>
-                                                                            )}
-                                                                        </DialogContent>
-                                                                    </Dialog>
-                                                                </div>
-                                                            </>
+                                                        {renderOptions()}
+                                                        {isMultipleChoice && (
+                                                            <Alert className="mt-2 sm:mt-4 bg-blue-50 text-xs sm:text-sm">
+                                                                <Check className="h-3 w-3 sm:h-4 sm:w-4" />
+                                                                <AlertTitle className="text-xs sm:text-sm">Multiple answers required</AlertTitle>
+                                                                <AlertDescription className="text-xs sm:text-sm">
+                                                                    This question requires selecting multiple correct answers.
+                                                                </AlertDescription>
+                                                            </Alert>
                                                         )}
                                                     </>
                                                 )}
-                                            </ScrollArea>
+                                            </div>
                                         </div>
-                                    </ResizablePanel>
-                                    <ResizableHandle withHandle />
-                                    <ResizablePanel defaultSize={isDesktop ? 60 : 70} minSize={40}>
-                                        <div className="h-full overflow-auto p-2 sm:p-4">
-                                            <ResizablePanelGroup direction="vertical" className="h-full">
-                                                <ResizablePanel defaultSize={15}>
-                                                    <div className="py-2 sm:py-4">
-                                                        {isAnimating ? (
-                                                            // Skeleton loading for question
-                                                            <div className="quiz-skeleton quiz-skeleton-title w-3/4"></div>
-                                                        ) : (
-                                                            <h2 className="text-base sm:text-lg md:text-xl font-bold">{currentQuestion.question}</h2>
-                                                        )}
-                                                    </div>
-                                                </ResizablePanel>
-                                                <ResizableHandle withHandle />
-                                                <ResizablePanel defaultSize={35}>
-                                                    <div className="py-2 sm:py-4">
-                                                        {isAnimating ? (
-                                                            // Skeleton loading for options
-                                                            <div className="space-y-4">
-                                                                <div className="quiz-skeleton quiz-skeleton-option"></div>
-                                                                <div className="quiz-skeleton quiz-skeleton-option"></div>
-                                                                <div className="quiz-skeleton quiz-skeleton-option"></div>
-                                                                <div className="quiz-skeleton quiz-skeleton-option"></div>
-                                                            </div>
-                                                        ) : (
-                                                            <>
-                                                                {renderOptions()}
-                                                                {isMultipleChoice && (
-                                                                    <Alert className="mt-2 sm:mt-4 bg-blue-50 text-xs sm:text-sm">
-                                                                        <Check className="h-3 w-3 sm:h-4 sm:w-4" />
-                                                                        <AlertTitle className="text-xs sm:text-sm">Multiple answers required</AlertTitle>
-                                                                        <AlertDescription className="text-xs sm:text-sm">
-                                                                            This question requires selecting multiple correct answers.
-                                                                        </AlertDescription>
-                                                                    </Alert>
-                                                                )}
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                </ResizablePanel>
-                                            </ResizablePanelGroup>
-                                        </div>
-                                    </ResizablePanel>
-                                </ResizablePanelGroup>
+                                    </div>
+                                </div>
                             </div>
+                        </div>
                         </div>
                     </div>
                 )
@@ -594,7 +585,7 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
                                         ))}
                                     </div>
                                 ) : (
-                                    <div id="all-questions" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 py-4 overflow-auto">
+                                    <div id="all-questions" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 py-4 overflow-auto">
                                         {formData.map((question, index) => (
                                             <QustionCard2
                                                 key={index}
