@@ -375,9 +375,7 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
                 </div>
             </div>
         ));
-    };
-
-    // Get the current question and option set
+    };    // Get the current question and option set
     const currentQuestion = quizData.questions[currentQuestionIndex] || {};
     const currentFormData = formData[currentQuestionIndex] || { index: currentQuestionIndex, answers: [], markedForReview: false };
     const selectedSetIndex = currentQuestion.selectedSetIndex !== undefined
@@ -387,8 +385,8 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
     const isMultipleChoice = currentOptionSet?.answer && currentOptionSet.answer.length > 1;
 
     return (
-        <div className="flex flex-col h-screen fixed inset-0">
-            <div id="header" className="flex-shrink-0 p-4 bg-white shadow-sm">
+        <div className="flex flex-col h-screen fixed inset-0 overflow-hidden">
+            <div id="header" className="flex-shrink-0 p-4 bg-white shadow-sm z-10">
                 <div className="flex flex-row items-center justify-between">
                     <div className="flex items-center justify-start">
                         <Image src={'/images/logo.png'} alt={'logo'} width={50} height={50} className={'mr-2'} />
@@ -425,8 +423,7 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
                             }
                         </div>
                     </div>
-                </div>
-                <Progress
+                </div>                <Progress
                     value={(timeRemaining / (quizData.timeLimit * 60)) * 100}
                     className={`h-2 mt-2 transition-all ${timeRemaining < 60 ? "bg-red-600" :
                         timeRemaining < 300 ? "bg-orange-500" :
@@ -434,220 +431,226 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
                         }`}
                 />
             </div>
-            {
-                currentQuestionIndex < quizData.questions.length && (
-                    <div id="Question" className="flex-grow overflow-hidden">
-                        <div className={`quiz-page-transition ${isAnimating ? 'pointer-events-none' : ''}`}>                            <div className={`w-full h-full ${isAnimating ?
-                            (animationDirection === 'next' ? 'quiz-animate-next-in' : 'quiz-animate-prev-in') : ''}`}>
-                            <div className="flex flex-col md:flex-row h-full rounded-lg border">                                <div className="w-full md:w-[40%] h-full md:block hidden">
-                                <div className="flex h-full items-center justify-center p-2 sm:p-4 md:p-6">
-                                    <ScrollArea className="h-full w-full">
-                                        {isAnimating ? (
-                                            // Skeleton loading for explanation
-                                            <div className="space-y-4">
-                                                <div className="quiz-skeleton quiz-skeleton-title"></div>
-                                                <div className="quiz-skeleton quiz-skeleton-text"></div>
-                                                <div className="quiz-skeleton quiz-skeleton-text"></div>
-                                                <div className="quiz-skeleton quiz-skeleton-text"></div>
-                                                <div className="quiz-skeleton quiz-skeleton-text"></div>
-                                            </div>
-                                        ) : (<>
-                                            {isDesktop ? (
-                                                <>
-                                                    <h2 className="font-bold text-sm sm:text-base">Explanation:</h2>
-                                                    <div className="text-gray-700 text-xs sm:text-sm prose prose-sm max-w-none">
-                                                        <ReactMarkdown
-                                                            rehypePlugins={[rehypeSanitize]}
-                                                            remarkPlugins={[remarkGfm]}
-                                                        >
-                                                            {currentQuestion.explanation || ''}
-                                                        </ReactMarkdown>
-                                                    </div>
-                                                    {currentQuestion.questionImage && (
-                                                        <div className="mt-2 sm:mt-4">
-                                                            <Image
-                                                                src={currentQuestion.questionImage}
-                                                                alt="Question image"
-                                                                width={400}
-                                                                height={300}
-                                                                className="max-w-full rounded-md"
-                                                            />
-                                                        </div>
-                                                    )}
-                                                </>
-                                            ) : (
-                                                // On mobile, the explanation is shown via the info icon next to the question
-                                                <div className="flex items-center justify-center h-full">
-                                                    <p className="text-gray-500 text-sm text-center">
-                                                        Tap the info icon (ⓘ) next to the question to see the explanation.
-                                                    </p>
+
+            {/* Main content with fixed height to ensure footer stays in view */}
+            <div className="flex-grow overflow-auto min-h-0">
+                {currentQuestionIndex < quizData.questions.length && (
+                    <div id="Question" className="h-full">
+                        <div className={`quiz-page-transition ${isAnimating ? 'pointer-events-none' : ''}`}>
+                            <div className={`w-full h-full ${isAnimating ?
+                                (animationDirection === 'next' ? 'quiz-animate-next-in' : 'quiz-animate-prev-in') : ''}`}>
+                                <div className="flex flex-col md:flex-row h-full rounded-lg border">                                <div className="w-full md:w-[40%] h-full md:block hidden">
+                                    <div className="flex h-full items-center justify-center p-2 sm:p-4 md:p-6">
+                                        <ScrollArea className="h-full w-full">
+                                            {isAnimating ? (
+                                                // Skeleton loading for explanation
+                                                <div className="space-y-4">
+                                                    <div className="quiz-skeleton quiz-skeleton-title"></div>
+                                                    <div className="quiz-skeleton quiz-skeleton-text"></div>
+                                                    <div className="quiz-skeleton quiz-skeleton-text"></div>
+                                                    <div className="quiz-skeleton quiz-skeleton-text"></div>
+                                                    <div className="quiz-skeleton quiz-skeleton-text"></div>
                                                 </div>
-                                            )}
-                                        </>
-                                        )}
-                                    </ScrollArea>
-                                </div>
-                            </div>
-                                <div className="hidden md:block w-[1px] bg-gray-200 my-2"></div>
-                                <div className="w-full h-full">
-                                    <div className="h-full overflow-auto p-2 sm:p-4">
-                                        <div className="flex flex-col h-full gap-4">
-                                            <div className="py-2 sm:py-4">
-                                                {isAnimating ? (
-                                                    // Skeleton loading for question
-                                                    <div className="quiz-skeleton quiz-skeleton-title w-3/4"></div>) : (
-                                                    <div className="flex flex-row items-center gap-2">
-                                                        <h2 className="text-base sm:text-lg md:text-xl font-bold flex-grow">{currentQuestion.question}</h2>
-                                                        {!isDesktop && (
-                                                            <Dialog>
-                                                                <DialogTrigger asChild>
-                                                                    <Button variant="ghost" size="sm" className="rounded-full p-0 h-8 w-8 flex-shrink-0">
-                                                                        <InfoIcon size={16} className="text-blue-500" />
-                                                                    </Button>
-                                                                </DialogTrigger>
-                                                                <DialogContent className="max-w-md">
-                                                                    <DialogHeader>
-                                                                        <DialogTitle>Explanation</DialogTitle>
-                                                                    </DialogHeader>
-                                                                    <div className="text-gray-700 text-xs sm:text-sm prose prose-sm max-w-none">
-                                                                        <ReactMarkdown
-                                                                            rehypePlugins={[rehypeSanitize]}
-                                                                            remarkPlugins={[remarkGfm]}
-                                                                        >
-                                                                            {currentQuestion.explanation || ''}
-                                                                        </ReactMarkdown>
-                                                                    </div>
-                                                                    {currentQuestion.questionImage && (
-                                                                        <div className="mt-2 sm:mt-4">
-                                                                            <Image
-                                                                                src={currentQuestion.questionImage}
-                                                                                alt="Question image"
-                                                                                width={400}
-                                                                                height={300}
-                                                                                className="max-w-full rounded-md"
-                                                                            />
-                                                                        </div>
-                                                                    )}
-                                                                </DialogContent>
-                                                            </Dialog>
-                                                        )}
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div className="h-[1px] bg-gray-200 w-full"></div>
-                                            <div className="py-2 sm:py-4 flex-1">
-                                                {isAnimating ? (
-                                                    // Skeleton loading for options
-                                                    <div className="space-y-4">
-                                                        <div className="quiz-skeleton quiz-skeleton-option"></div>
-                                                        <div className="quiz-skeleton quiz-skeleton-option"></div>
-                                                        <div className="quiz-skeleton quiz-skeleton-option"></div>
-                                                        <div className="quiz-skeleton quiz-skeleton-option"></div>
-                                                    </div>
-                                                ) : (
+                                            ) : (<>
+                                                {isDesktop ? (
                                                     <>
-                                                        {renderOptions()}
-                                                        {isMultipleChoice && (
-                                                            <Alert className="mt-2 sm:mt-4 bg-blue-50 text-xs sm:text-sm">
-                                                                <Check className="h-3 w-3 sm:h-4 sm:w-4" />
-                                                                <AlertTitle className="text-xs sm:text-sm">Multiple answers required</AlertTitle>
-                                                                <AlertDescription className="text-xs sm:text-sm">
-                                                                    This question requires selecting multiple correct answers.
-                                                                </AlertDescription>
-                                                            </Alert>
+                                                        <h2 className="font-bold text-sm sm:text-base">Explanation:</h2>
+                                                        <div className="text-gray-700 text-xs sm:text-sm prose prose-sm max-w-none">
+                                                            <ReactMarkdown
+                                                                rehypePlugins={[rehypeSanitize]}
+                                                                remarkPlugins={[remarkGfm]}
+                                                            >
+                                                                {currentQuestion.explanation || ''}
+                                                            </ReactMarkdown>
+                                                        </div>
+                                                        {currentQuestion.questionImage && (
+                                                            <div className="mt-2 sm:mt-4">
+                                                                <Image
+                                                                    src={currentQuestion.questionImage}
+                                                                    alt="Question image"
+                                                                    width={400}
+                                                                    height={300}
+                                                                    className="max-w-full rounded-md"
+                                                                />
+                                                            </div>
                                                         )}
                                                     </>
+                                                ) : (
+                                                    // On mobile, the explanation is shown via the info icon next to the question
+                                                    <div className="flex items-center justify-center h-full">
+                                                        <p className="text-gray-500 text-sm text-center">
+                                                            Tap the info icon (ⓘ) next to the question to see the explanation.
+                                                        </p>
+                                                    </div>
                                                 )}
+                                            </>
+                                            )}
+                                        </ScrollArea>
+                                    </div>
+                                </div>
+                                    <div className="hidden md:block w-[1px] bg-gray-200 my-2"></div>
+                                    <div className="w-full h-full">
+                                        <div className="h-full overflow-auto p-2 sm:p-4">
+                                            <div className="flex flex-col h-full gap-4">
+                                                <div className="py-2 sm:py-4">
+                                                    {isAnimating ? (
+                                                        // Skeleton loading for question
+                                                        <div className="quiz-skeleton quiz-skeleton-title w-3/4"></div>) : (
+                                                        <div className="flex flex-row items-center gap-2">
+                                                            <h2 className="text-base sm:text-lg md:text-xl font-bold flex-grow">{currentQuestion.question}</h2>
+                                                            {!isDesktop && (
+                                                                <Dialog>
+                                                                    <DialogTrigger asChild>
+                                                                        <Button variant="ghost" size="sm" className="rounded-full p-0 h-8 w-8 flex-shrink-0">
+                                                                            <InfoIcon size={16} className="text-blue-500" />
+                                                                        </Button>
+                                                                    </DialogTrigger>
+                                                                    <DialogContent className="max-w-md">
+                                                                        <DialogHeader>
+                                                                            <DialogTitle>Explanation</DialogTitle>
+                                                                        </DialogHeader>
+                                                                        <div className="text-gray-700 text-xs sm:text-sm prose prose-sm max-w-none">
+                                                                            <ReactMarkdown
+                                                                                rehypePlugins={[rehypeSanitize]}
+                                                                                remarkPlugins={[remarkGfm]}
+                                                                            >
+                                                                                {currentQuestion.explanation || ''}
+                                                                            </ReactMarkdown>
+                                                                        </div>
+                                                                        {currentQuestion.questionImage && (
+                                                                            <div className="mt-2 sm:mt-4">
+                                                                                <Image
+                                                                                    src={currentQuestion.questionImage}
+                                                                                    alt="Question image"
+                                                                                    width={400}
+                                                                                    height={300}
+                                                                                    className="max-w-full rounded-md"
+                                                                                />
+                                                                            </div>
+                                                                        )}
+                                                                    </DialogContent>
+                                                                </Dialog>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="h-[1px] bg-gray-200 w-full"></div>
+                                                <div className="py-2 sm:py-4 flex-1">
+                                                    {isAnimating ? (
+                                                        // Skeleton loading for options
+                                                        <div className="space-y-4">
+                                                            <div className="quiz-skeleton quiz-skeleton-option"></div>
+                                                            <div className="quiz-skeleton quiz-skeleton-option"></div>
+                                                            <div className="quiz-skeleton quiz-skeleton-option"></div>
+                                                            <div className="quiz-skeleton quiz-skeleton-option"></div>
+                                                        </div>
+                                                    ) : (
+                                                        <>
+                                                            {renderOptions()}
+                                                            {isMultipleChoice && (
+                                                                <Alert className="mt-2 sm:mt-4 bg-blue-50 text-xs sm:text-sm">
+                                                                    <Check className="h-3 w-3 sm:h-4 sm:w-4" />
+                                                                    <AlertTitle className="text-xs sm:text-sm">Multiple answers required</AlertTitle>
+                                                                    <AlertDescription className="text-xs sm:text-sm">
+                                                                        This question requires selecting multiple correct answers.
+                                                                    </AlertDescription>
+                                                                </Alert>
+                                                            )}
+                                                        </>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        </div>
                     </div>
                 )
-            }
-            {
-                currentQuestionIndex === quizData.questions.length && (
-                    <div className={`quiz-page-transition ${isAnimating ? 'pointer-events-none' : ''}`}>
-                        <div className={`w-full h-full ${isAnimating ? 'quiz-animate-fade-in' : ''}`}>
-                            <ScrollArea className="h-full w-full p-4 overflow-auto">
-                                <div>
-                                    <h2 className="text-xl font-bold">All Questions</h2>
-                                    <p>Click on a question to jump to it.</p>
-                                </div>
-                                {isAnimating ? (
-                                    // Skeleton loading for review page
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 py-4">
-                                        {Array(quizData.questions.length).fill(0).map((_, index) => (
-                                            <div key={index} className="quiz-skeleton h-16 rounded-md"></div>
-                                        ))}
+                }            {
+                    currentQuestionIndex === quizData.questions.length && (
+                        <div className={`quiz-page-transition ${isAnimating ? 'pointer-events-none' : ''}`}>
+                            <div className={`w-full h-full ${isAnimating ? 'quiz-animate-fade-in' : ''}`}>
+                                <ScrollArea className="h-full w-full p-4 overflow-auto">
+                                    <div>
+                                        <h2 className="text-xl font-bold">All Questions</h2>
+                                        <p>Click on a question to jump to it.</p>
                                     </div>
-                                ) : (
-                                    <div id="all-questions" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 py-4 overflow-auto">
-                                        {formData.map((question, index) => (
-                                            <QustionCard2
-                                                key={index}
-                                                index={index}
-                                                setCurentIndex={handleGoToQuestion}
-                                                markedForReview={question.markedForReview}
-                                                answers={question.answers}
-                                                isHardMode={quizData.quizType === "no-review" ? true : false}
-                                            />
-                                        ))}
+                                    {isAnimating ? (
+                                        // Skeleton loading for review page
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 py-4">
+                                            {Array(quizData.questions.length).fill(0).map((_, index) => (
+                                                <div key={index} className="quiz-skeleton h-16 rounded-md"></div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div id="all-questions" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 py-4 overflow-auto">
+                                            {formData.map((question, index) => (
+                                                <QustionCard2
+                                                    key={index}
+                                                    index={index}
+                                                    setCurentIndex={handleGoToQuestion}
+                                                    markedForReview={question.markedForReview}
+                                                    answers={question.answers}
+                                                    isHardMode={quizData.quizType === "no-review" ? true : false}
+                                                />
+                                            ))}
+                                        </div>
+                                    )}
+                                    <div className="flex flex-row items-center justify-between mt-4">
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => setCurrentQuestionIndex(0)}
+                                            className="transition-all duration-300 hover:shadow-md"
+                                        >
+                                            Start Over
+                                        </Button>
+                                        <Button
+                                            variant="default"
+                                            onClick={handleSubmit}
+                                            disabled={isTimerExpired}
+                                            className="transition-all duration-300 hover:shadow-md"
+                                        >
+                                            Submit Quiz
+                                        </Button>
                                     </div>
-                                )}
-                                <div className="flex flex-row items-center justify-between mt-4">
-                                    <Button
-                                        variant="outline"
-                                        onClick={() => setCurrentQuestionIndex(0)}
-                                        className="transition-all duration-300 hover:shadow-md"
-                                    >
-                                        Start Over
-                                    </Button>
-                                    <Button
-                                        variant="default"
-                                        onClick={handleSubmit}
-                                        disabled={isTimerExpired}
-                                        className="transition-all duration-300 hover:shadow-md"
-                                    >
-                                        Submit Quiz
-                                    </Button>
-                                </div>
-                            </ScrollArea>
-                        </div>
-                    </div>
-                )
-            }
-            <div id="footer" className="flex-shrink-0 p-4 bg-white shadow-sm border-t">
-                <div className="flex justify-between">
+                                </ScrollArea>
+                            </div>                    </div>
+                    )}
+            </div>
+            {/* Fixed footer that's always visible */}
+            <div id="footer" className="flex-shrink-0 p-3 bg-white shadow-sm border-t w-full z-10 sticky bottom-0 left-0 right-0">
+                <div className="flex justify-between items-center gap-2 max-w-full">
                     <Button
                         variant="outline"
                         disabled={currentQuestionIndex === 0 || quizData.quizType === "no-review"}
                         onClick={handlePreviousQuestion}
-                        className="transition-all duration-300 hover:shadow-md transform hover:translate-x-[-2px]"
+                        className="transition-all duration-300 hover:shadow-md flex-1 min-w-0"
+                        size="sm"
                     >
-                        <MoveLeft size={16} className="mr-2" />
-                        Previous
+                        <MoveLeft size={16} className="md:mr-2" />
+                        <span className="hidden md:inline">Previous</span>
                     </Button>
 
                     <Button
                         variant="outline"
                         onClick={handleGoToReview}
-                        className="transition-all duration-300 hover:shadow-md"
+                        className="transition-all duration-300 hover:shadow-md flex-1 min-w-0"
+                        size="sm"
                     >
-                        <ListTodo size={16} className="mr-2" />
-                        Review Questions
+                        <ListTodo size={16} className="md:mr-2" />
+                        <span className="hidden md:inline">Review</span>
+                        <span className="md:hidden">All</span>
                     </Button>
 
                     <Button
                         disabled={currentQuestionIndex === quizData.questions.length}
                         onClick={handleNextQuestion}
-                        className="transition-all duration-300 hover:shadow-md transform hover:translate-x-[2px]"
+                        className="transition-all duration-300 hover:shadow-md flex-1 min-w-0"
+                        size="sm"
                     >
-                        Next
-                        <MoveRight size={16} className="ml-2" />
+                        <span className="hidden md:inline">Next</span>
+                        <MoveRight size={16} className="md:ml-2" />
                     </Button>
                 </div>
             </div>
