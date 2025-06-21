@@ -63,7 +63,7 @@ jobs:
           
           # Create Caddy configuration file
           sudo -n tee /etc/caddy/Caddyfile > /dev/null <<EOF
-          platform.azoozgat.com {
+          azoozgat.com {
             reverse_proxy localhost:3000
           }
           EOF
@@ -80,4 +80,4 @@ jobs:
           # Verify app is responding
           curl -I http://localhost:3000 || true
           
-          echo "Deployment complete. Site should be available at https://platform.azoozgat.com"
+          echo "Deployment complete. Site should be available at https://azoozgat.com"
