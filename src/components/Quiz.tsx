@@ -385,7 +385,11 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
     const isMultipleChoice = currentOptionSet?.answer && currentOptionSet.answer.length > 1;
 
     return (
-        <div className="flex flex-col h-screen fixed inset-0 overflow-hidden">
+        <div className="flex flex-col h-screen w-full fixed inset-0 overflow-hidden" style={{
+            height: '100vh',
+            maxHeight: '-webkit-fill-available',
+            WebkitOverflowScrolling: 'touch'
+        }}>
             <div id="header" className="flex-shrink-0 p-4 bg-white shadow-sm z-10">
                 <div className="flex flex-row items-center justify-between">
                     <div className="flex items-center justify-start">
@@ -433,7 +437,7 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
             </div>
 
             {/* Main content with fixed height to ensure footer stays in view */}
-            <div className="flex-grow overflow-auto min-h-0">
+            <div className="flex-grow overflow-auto min-h-0" style={{ paddingBottom: '80px' }}>
                 {currentQuestionIndex < quizData.questions.length && (
                     <div id="Question" className="h-full">
                         <div className={`quiz-page-transition ${isAnimating ? 'pointer-events-none' : ''}`}>
@@ -441,7 +445,7 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
                                 (animationDirection === 'next' ? 'quiz-animate-next-in' : 'quiz-animate-prev-in') : ''}`}>
                                 <div className="flex flex-col md:flex-row h-full rounded-lg border">                                <div className="w-full md:w-[40%] h-full md:block hidden">
                                     <div className="flex h-full items-center justify-center p-2 sm:p-4 md:p-6">
-                                        <ScrollArea className="h-full w-full">
+                                        <ScrollArea className="h-full w-full" style={{ WebkitOverflowScrolling: 'touch' }}>
                                             {isAnimating ? (
                                                 // Skeleton loading for explanation
                                                 <div className="space-y-4">
@@ -569,9 +573,9 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
                 )
                 }            {
                     currentQuestionIndex === quizData.questions.length && (
-                        <div className={`quiz-page-transition ${isAnimating ? 'pointer-events-none' : ''}`}>
+                        <div className={`quiz-page-transition ${isAnimating ? 'pointer-events-none' : ''}`} style={{ paddingBottom: '80px' }}>
                             <div className={`w-full h-full ${isAnimating ? 'quiz-animate-fade-in' : ''}`}>
-                                <ScrollArea className="h-full w-full p-4 overflow-auto">
+                                <ScrollArea className="h-full w-full p-4 overflow-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
                                     <div>
                                         <h2 className="text-xl font-bold">All Questions</h2>
                                         <p>Click on a question to jump to it.</p>
@@ -618,14 +622,22 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
                             </div>                    </div>
                     )}
             </div>
-            {/* Fixed footer that's always visible */}
-            <div id="footer" className="flex-shrink-0 p-3 bg-white shadow-sm border-t w-full z-10 sticky bottom-0 left-0 right-0">
-                <div className="flex justify-between items-center gap-2 max-w-full">
+            {/* Fixed footer that's always visible - Safari compatible */}
+            <div id="footer" className="flex-shrink-0 p-3 bg-white shadow-sm border-t w-full z-30 fixed bottom-0 left-0 right-0"
+                style={{
+                    WebkitTransform: 'translateZ(0)',
+                    transform: 'translateZ(0)',
+                    WebkitBackfaceVisibility: 'hidden',
+                    backfaceVisibility: 'hidden',
+                    WebkitPerspective: 1000,
+                    perspective: 1000
+                }}>
+                <div className="flex justify-between items-center gap-2 w-full">
                     <Button
                         variant="outline"
                         disabled={currentQuestionIndex === 0 || quizData.quizType === "no-review"}
                         onClick={handlePreviousQuestion}
-                        className="transition-all duration-300 hover:shadow-md flex-1 min-w-0"
+                        className="transition-all duration-300 hover:shadow-md w-1/3 flex-1"
                         size="sm"
                     >
                         <MoveLeft size={16} className="md:mr-2" />
@@ -635,7 +647,7 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
                     <Button
                         variant="outline"
                         onClick={handleGoToReview}
-                        className="transition-all duration-300 hover:shadow-md flex-1 min-w-0"
+                        className="transition-all duration-300 hover:shadow-md w-1/3 flex-1"
                         size="sm"
                     >
                         <ListTodo size={16} className="md:mr-2" />
@@ -646,7 +658,7 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
                     <Button
                         disabled={currentQuestionIndex === quizData.questions.length}
                         onClick={handleNextQuestion}
-                        className="transition-all duration-300 hover:shadow-md flex-1 min-w-0"
+                        className="transition-all duration-300 hover:shadow-md w-1/3 flex-1"
                         size="sm"
                     >
                         <span className="hidden md:inline">Next</span>
