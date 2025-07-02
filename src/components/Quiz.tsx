@@ -7,7 +7,7 @@ import '../app/quiz-animations.css'
 // Resizable panel imports removed
 
 import { Progress } from "@/components/ui/progress"
-import { Clock, FlagIcon, MoveLeft, MoveRight, Check, ListTodo } from "lucide-react";
+import { Clock, FlagIcon, MoveLeft, MoveRight, Check, ListTodo, Trophy, Info } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { ScrollArea } from "./ui/scroll-area";
 import { Toggle } from "@/components/ui/toggle";
@@ -110,6 +110,8 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
 
     const [timeRemaining, setTimeRemaining] = useState<number>(quizData.timeLimit * 60 || 1800);
     const [isTimerExpired, setIsTimerExpired] = useState<boolean>(false);
+    const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
+    const [submittedReportId, setSubmittedReportId] = useState<string | null>(null);
     const router = useRouter();
 
     const isDesktop = useMediaQuery("(min-width: 768px)"); const [animationDirection, setAnimationDirection] = useState<'next' | 'prev' | 'none'>('none');
@@ -282,7 +284,17 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
             });
             toast.dismiss();
             toast.success("Quiz report saved successfully!");
-            router.push("/dashboard/me/results");
+
+            // Store the report ID and mark as submitted
+            setSubmittedReportId(docref.id);
+            setIsSubmitted(true);
+
+            // Show results page after a delay
+            setTimeout(() => {
+                if (!isSubmitted) {
+                    router.push("/dashboard/me/results");
+                }
+            }, 5000);
         } catch (error) {
             console.error("Error saving quiz report:", error);
             let errorMessage = "An error occurred while saving the quiz report.";
@@ -579,6 +591,16 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
                                     <div>
                                         <h2 className="text-xl font-bold">All Questions</h2>
                                         <p>Click on a question to jump to it.</p>
+
+                                        {isSubmitted && (
+                                            <Alert className="mt-4 bg-green-50 dark:bg-green-900/20">
+                                                <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                                <AlertTitle>Quiz Submitted Successfully!</AlertTitle>
+                                                <AlertDescription>
+                                                    Your quiz has been submitted and your score has been recorded. You can view your results or check the leaderboard.
+                                                </AlertDescription>
+                                            </Alert>
+                                        )}
                                     </div>
                                     {isAnimating ? (
                                         // Skeleton loading for review page
@@ -609,14 +631,33 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
                                         >
                                             Start Over
                                         </Button>
-                                        <Button
-                                            variant="default"
-                                            onClick={handleSubmit}
-                                            disabled={isTimerExpired}
-                                            className="transition-all duration-300 hover:shadow-md"
-                                        >
-                                            Submit Quiz
-                                        </Button>
+                                        {isSubmitted ? (
+                                            <div className="flex gap-2">
+                                                <Button
+                                                    variant="outline"
+                                                    onClick={() => router.push("/dashboard/me/results")}
+                                                    className="transition-all duration-300 hover:shadow-md"
+                                                >
+                                                    View Results
+                                                </Button>
+                                                <Button
+                                                    variant="default"
+                                                    onClick={() => router.push(`/dashboard/quizzes/leaderboard/${quizData.id}`)}
+                                                    className="transition-all duration-300 hover:shadow-md"
+                                                >
+                                                    View Leaderboard
+                                                </Button>
+                                            </div>
+                                        ) : (
+                                            <Button
+                                                variant="default"
+                                                onClick={handleSubmit}
+                                                disabled={isTimerExpired}
+                                                className="transition-all duration-300 hover:shadow-md"
+                                            >
+                                                Submit Quiz
+                                            </Button>
+                                        )}
                                     </div>
                                 </ScrollArea>
                             </div>                    </div>
@@ -632,39 +673,76 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
                     WebkitPerspective: 1000,
                     perspective: 1000
                 }}>
-                <div className="flex justify-between items-center gap-2 w-full">
-                    <Button
-                        variant="outline"
-                        disabled={currentQuestionIndex === 0 || quizData.quizType === "no-review"}
-                        onClick={handlePreviousQuestion}
-                        className="transition-all duration-300 hover:shadow-md w-1/3 flex-1"
-                        size="sm"
-                    >
-                        <MoveLeft size={16} className="md:mr-2" />
-                        <span className="hidden md:inline">Previous</span>
-                    </Button>
+                {isSubmitted && currentQuestionIndex === quizData.questions.length ? (
+                    <div className="flex justify-between items-center gap-2 w-full">
+                        <Button
+                            variant="outline"
+                            onClick={() => router.push("/dashboard/me/results")}
+                            className="transition-all duration-300 hover:shadow-md flex-1"
+                            size="sm"
+                        >
+                            <Check size={16} className="md:mr-2" />
+                            <span className="hidden md:inline">My Results</span>
+                            <span className="md:hidden">Results</span>
+                        </Button>
 
-                    <Button
-                        variant="outline"
-                        onClick={handleGoToReview}
-                        className="transition-all duration-300 hover:shadow-md w-1/3 flex-1"
-                        size="sm"
-                    >
-                        <ListTodo size={16} className="md:mr-2" />
-                        <span className="hidden md:inline">Review</span>
-                        <span className="md:hidden">All</span>
-                    </Button>
+                        <Button
+                            variant="outline"
+                            onClick={() => router.push("/dashboard")}
+                            className="transition-all duration-300 hover:shadow-md flex-1"
+                            size="sm"
+                        >
+                            <ListTodo size={16} className="md:mr-2" />
+                            <span className="hidden md:inline">Dashboard</span>
+                            <span className="md:hidden">Home</span>
+                        </Button>
 
-                    <Button
-                        disabled={currentQuestionIndex === quizData.questions.length}
-                        onClick={handleNextQuestion}
-                        className="transition-all duration-300 hover:shadow-md w-1/3 flex-1"
-                        size="sm"
-                    >
-                        <span className="hidden md:inline">Next</span>
-                        <MoveRight size={16} className="md:ml-2" />
-                    </Button>
-                </div>
+                        <Button
+                            variant="default"
+                            onClick={() => router.push(`/dashboard/quizzes/leaderboard/${quizData.id}`)}
+                            className="transition-all duration-300 hover:shadow-md flex-1"
+                            size="sm"
+                        >
+                            <Trophy size={16} className="md:mr-2" />
+                            <span className="hidden md:inline">Leaderboard</span>
+                            <span className="md:hidden">Ranks</span>
+                        </Button>
+                    </div>
+                ) : (
+                    <div className="flex justify-between items-center gap-2 w-full">
+                        <Button
+                            variant="outline"
+                            disabled={currentQuestionIndex === 0 || quizData.quizType === "no-review"}
+                            onClick={handlePreviousQuestion}
+                            className="transition-all duration-300 hover:shadow-md w-1/3 flex-1"
+                            size="sm"
+                        >
+                            <MoveLeft size={16} className="md:mr-2" />
+                            <span className="hidden md:inline">Previous</span>
+                        </Button>
+
+                        <Button
+                            variant="outline"
+                            onClick={handleGoToReview}
+                            className="transition-all duration-300 hover:shadow-md w-1/3 flex-1"
+                            size="sm"
+                        >
+                            <ListTodo size={16} className="md:mr-2" />
+                            <span className="hidden md:inline">Review</span>
+                            <span className="md:hidden">All</span>
+                        </Button>
+
+                        <Button
+                            disabled={currentQuestionIndex === quizData.questions.length}
+                            onClick={handleNextQuestion}
+                            className="transition-all duration-300 hover:shadow-md w-1/3 flex-1"
+                            size="sm"
+                        >
+                            <span className="hidden md:inline">Next</span>
+                            <MoveRight size={16} className="md:ml-2" />
+                        </Button>
+                    </div>
+                )}
             </div>
         </div>
     );

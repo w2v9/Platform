@@ -59,6 +59,11 @@ export default function Page() {
   const [selectedLog, setSelectedLog] = useState<Log | null>(null);
 
   useEffect(() => {
+    // Set page title
+    document.title = "Admin Dashboard - AzoozGAT Platform";
+  }, []);
+
+  useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
@@ -453,7 +458,7 @@ export default function Page() {
                   <CardContent>
                     <div className="text-2xl font-bold">
                       {reports.length > 0
-                        ? Math.floor(reports.reduce((sum, report) => sum + report.timeTaken, 0) / reports.length / 60)
+                        ? Math.floor(reports.reduce((sum, report) => sum + report.timeTaken, 0) / reports.length)
                         : 0} min
                     </div>
                     <p className="text-xs text-muted-foreground">
@@ -645,7 +650,10 @@ export default function Page() {
                               </Badge>
                             </TableCell>
                             <TableCell>
-                              {Math.floor(report.timeTaken / 60)}m {report.timeTaken % 60}s
+                              {
+                                // timeTaken is in minutes and a float
+                                report.timeTaken ? `${Math.floor(report.timeTaken)} min ${Math.round((report.timeTaken % 1) * 60)} sec` : 'N/A'
+                              }
                             </TableCell>
                             <TableCell>
                               {report.dateTaken ? format(new Date(report.dateTaken), 'MMM d, yyyy') : 'N/A'}

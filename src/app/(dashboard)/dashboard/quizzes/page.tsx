@@ -187,6 +187,9 @@ export default function Quizzes() {
                             <DropdownMenuItem onClick={() => window.location.href = `/dashboard/quizzes/preview/${quiz.id}`}>
                                 Preview
                             </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => window.location.href = `/dashboard/quizzes/leaderboard/${quiz.id}`}>
+                                Leaderboard
+                            </DropdownMenuItem>
                             <DropdownMenuItem className="text-destructive" onClick={handleDeleteQuiz(quiz.id)}>
                                 Delete
                             </DropdownMenuItem>

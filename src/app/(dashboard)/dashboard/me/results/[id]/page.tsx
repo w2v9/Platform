@@ -41,6 +41,11 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    // Set page title
+    useEffect(() => {
+        document.title = "Quiz Report  for " + quizData.title + " - AzoozGAT Platform";
+    }, [quizData]);
+
     useEffect(() => {
         const fetchReport = async () => {
             try {

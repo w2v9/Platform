@@ -32,6 +32,7 @@ export interface QuizReport {
     maxScore?: number;
     percentageScore?: number;
     dateTaken?: string;
+    attemptNumber?: number; // Added for tracking attempts count
 }
 
 async function isUserAdmin(): Promise<boolean> {
@@ -188,12 +189,22 @@ export async function createReport(report: Omit<QuizReport, 'id'>): Promise<Quiz
             throw new Error("Cannot create reports for other users");
         }
 
+        // Get previous attempts for this quiz by this user to determine attempt number
+        const reportsRef = collection(db, "reports");
+        const q = query(
+            reportsRef,
+            where("quizId", "==", report.quizId),
+            where("userId", "==", report.userId)
+        );
+        const existingReports = await getDocs(q);
+        const attemptNumber = existingReports.size + 1;
+
         const reportData = {
             ...report,
-            dateTaken: report.dateTaken || new Date().toISOString()
+            dateTaken: report.dateTaken || new Date().toISOString(),
+            attemptNumber: attemptNumber
         };
 
-        const reportsRef = collection(db, "reports");
         const docRef = await addDoc(reportsRef, reportData);
 
         return {

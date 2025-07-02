@@ -9,7 +9,7 @@ import { AuthProvider, useAuth } from "@/lib/context/authContext";
 import { Toaster } from "@/components/ui/sonner";
 import { useRouter, usePathname } from "next/navigation";
 import { getUserById, UserRole } from "@/lib/db_user";
-import { FileUser, Home, Inbox, ScrollText, Users, AlertTriangle, Loader2 } from "lucide-react";
+import { FileUser, Home, Inbox, ScrollText, Users, AlertTriangle, Loader2, FileDown, Trophy, BadgeCheck, Logs } from "lucide-react";
 import { SidebarItem } from "@/components/app-sidebar";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { auth } from "@/lib/config/firebase-config";
@@ -42,7 +42,10 @@ const routes: RouteDef[] = [
     { path: '/dashboard/me', type: 'user' },
     { path: '/dashboard/me/quizzes', type: 'user' },
     { path: '/dashboard/me/results', type: 'user' },
+    { path: '/dashboard/me/download', type: 'user' },
+    { path: '/dashboard/me/leaderboard', type: 'user' },
     { path: '/dashboard/admin', type: 'admin' },
+    { path: '/dashboard/verify-pdf', type: 'admin' },
     { path: '/dashboard/results', type: 'admin' },
     { path: '/dashboard/quizzes', type: 'admin' },
     { path: '/dashboard/quizzes/create', type: 'admin' },
@@ -53,7 +56,9 @@ const routes: RouteDef[] = [
     { path: '/dashboard/users/create', type: 'admin' },
     { path: '/dashboard/users/edit', type: 'admin' },
     { path: '/dashboard/users/edit/:id', type: 'admin' },
+    { path: '/dashboard/leaderboard', type: 'admin' },
     { path: '/dashboard/logs', type: 'admin' },
+    { path: '/dashboard/download-logs', type: 'admin' },
 ];
 
 const getNavigationItems = (role: UserRole | undefined): SidebarItem[] => {
@@ -73,6 +78,16 @@ const getNavigationItems = (role: UserRole | undefined): SidebarItem[] => {
             url: "/dashboard/me/results",
             icon: FileUser,
         },
+        {
+            title: "Download",
+            url: "/dashboard/me/download",
+            icon: FileDown,
+        },
+        {
+            title: "Leaderboard",
+            url: "/dashboard/me/leaderboard",
+            icon: Trophy,
+        }
     ];
 
     const adminItems: SidebarItem[] = [
@@ -90,6 +105,21 @@ const getNavigationItems = (role: UserRole | undefined): SidebarItem[] => {
             title: "Users",
             url: "/dashboard/users",
             icon: Users,
+        },
+        {
+            title: "Leaderboard",
+            url: "/dashboard/leaderboard",
+            icon: Trophy,
+        },
+        {
+            title: "Verify PDF",
+            url: "/dashboard/verify-pdf",
+            icon: BadgeCheck,
+        },
+        {
+            title: "Download Logs",
+            url: "/dashboard/download-logs",
+            icon: Logs,
         },
         {
             title: "Logs",

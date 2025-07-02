@@ -50,6 +50,11 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
     const [quizData, setQuizData] = useState<Quiz>();
     const [isLoading, setIsLoading] = useState(true); const [error, setError] = useState<string | null>(null);
 
+    useEffect(() => {
+        // Set page title
+        document.title = "Quiz - AzoozGAT Platform";
+    }, []);
+
     function prepareQuizForTaking(quiz: Quiz): Quiz {
         if (!quiz) return quiz;
 

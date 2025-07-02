@@ -1,0 +1,100 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database
+  }/documents {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Function to check if the client is only requesting allowed public fields
+    function isRequestingPublicFields(allowedFields) {
+      return request.resource.data.keys().hasOnly(allowedFields);
+    }
+    
+    // Helper function to get public user fields safe for leaderboard
+    function getPublicUserFields() {
+      return ['id', 'uid', 'displayName', 'photoURL', 'email', 'role', 'createdAt', 'updatedAt'];
+    }
+    
+    // Helper function to get public report fields safe for leaderboard
+    function getPublicReportFields() {
+      return ['id', 'userId', 'quizId', 'quizTitle', 'score', 'maxScore', 
+              'percentageScore', 'timeTaken', 'submittedAt', 'dateTaken', 'attemptNumber'];
+    }
+    
+    // Check if a read operation is for leaderboard purposes (with proper limits)
+    function isLeaderboardRead() {
+      return isAuthenticated() && request.query.limit <= 100;
+    }
+    
+    // Check if the user is accessing their own data
+    function isAccessingOwnData(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    match /users/{userId} {
+      // Users can read their own full profiles
+      // Admins can read all profiles
+      allow read: if isOwner(userId) || isAdmin();
+      
+      // Allow listing users for leaderboard with limited query
+      allow list: if isAuthenticated() && 
+                  (request.query.limit <= 100 || 
+                   request.query.limit == null); // Allow queries without explicit limit
+      
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update: if isOwner(userId) || 
+                    (isAdmin() && request.resource.data.diff(resource.data).affectedKeys()
+                      .hasOnly(['role', 'status']));
+    }
+
+    match /quiz/{quizId} {
+      // Anyone can read published quizzes
+      // Only admins can create/update/delete quizzes
+      allow read: if resource.data.published == true || isAdmin();
+      
+      // Allow listing quizzes with limits
+      allow list: if isAuthenticated() && 
+                  (request.query.limit <= 100 ||
+                   request.query.limit == null); // Allow queries without explicit limit
+      
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /reports/{reportId} {
+      // Allow all authenticated users to read reports
+      // This enables all users to view leaderboard data
+      allow read: if isAuthenticated();
+      
+      // Allow listing reports for leaderboard with limits
+      // This allows users to get global leaderboard data
+      allow list: if isAuthenticated();
+      
+      // Only the owner can create reports
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if false; // Reports should be immutable
+    }
+    
+    //logs collection - only admin access
+    match /logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated(); // Allow authenticated users to create logs
+      allow update, delete: if isAdmin();
+    }
+    
+    // All other collections are admin-only by default
+    match /{document=**} {
+      allow read, write: if isAdmin();
+    }
+  }
+}

@@ -11,12 +11,12 @@ Stores user account information and session data.
 ```typescript
 interface User {
   id: string;                    // User UID from Firebase Auth
-  displayName: string;           // User's display name
-  email: string;                 // User's email address
+  displayName: string;           // User's display name (public field)
+  email: string;                 // User's email address (public field)
   username?: string;             // Optional username
   phone?: string;                // Optional phone number
-  photoURL?: string;             // Profile picture URL
-  role: "user" | "admin";        // User role
+  photoURL?: string;             // Profile picture URL (public field)
+  role: "user" | "admin";        // User role (public field)
   status: "inactive" | "active" | "warned" | "banned"; // Account status
   metadata: {
     createdAt: string;           // ISO timestamp
@@ -24,10 +24,10 @@ interface User {
     lastLoginAt?: string;        // ISO timestamp
     sessions?: Session[];        // Login session history
   };
-  quizResults: QuizResult[];     // User's quiz attempt history
+  // Note: quizResults are now stored in the reports collection, not here
 }
 
-interface Session {
+// Fields marked as (public field) are accessible by all authenticated users for leaderboard functionality
   loginAt: string;               // ISO timestamp
   ip?: string;                   // IP address
   location?: {                   // Geographic location
@@ -92,15 +92,16 @@ Stores quiz attempt results and analytics.
 ```typescript
 interface QuizReport {
   id: string;                    // Unique report identifier
-  quizId: string;                // Reference to quiz
+  quizId: string;                // Reference to quiz (leaderboard field)
   quizTitle: string;             // Quiz title (for easy access)
-  userId: string;                // User who took the quiz
+  userId: string;                // User who took the quiz (leaderboard field)
   userName: string;              // User's name/email
-  score: number;                 // Number of correct answers
+  score: number;                 // Number of correct answers (leaderboard field)
   maxScore: number;              // Total number of questions
-  percentageScore: number;       // Percentage score (0-100)
-  timeTaken: number;             // Time taken in minutes
-  dateTaken: string;             // ISO timestamp
+  percentageScore: number;       // Percentage score (0-100) (leaderboard field)
+  timeTaken: number;             // Time taken in minutes (leaderboard field)
+  dateTaken: string;             // ISO timestamp (leaderboard field)
+  submittedAt: string;           // ISO timestamp when submitted (leaderboard field)
   answeredQuestions: Question[]; // Questions that were answered
   selectedOptions: {             // User's selected answers
     questionId: string;
@@ -108,6 +109,8 @@ interface QuizReport {
     selectedOptionId: string[];
   }[];
 }
+
+// Fields marked as (leaderboard field) are accessible by all authenticated users for leaderboard functionality
 ```
 
 ### Logs Collection (`logs`)
@@ -150,11 +153,35 @@ Recommended Firestore indexes for optimal performance:
 Firebase security rules should be configured to:
 - Allow users to read/write their own data
 - Allow admins to read/write all data
+- Allow authenticated users to read limited public data for leaderboard functionality
 - Prevent unauthorized access to sensitive information
 - Validate data structure and types
+
+### Public Data For Leaderboard
+
+For leaderboard functionality, the following data is accessible to all authenticated users:
+
+**From Users Collection:**
+- `displayName`
+- `photoURL`
+- `email`
+- `role`
+
+**From Reports Collection:**
+- `userId`
+- `quizId`
+- `score`
+- `timeTaken`
+- `submittedAt`
+
+This allows the leaderboard to function while protecting sensitive user information.
+
+See the complete implementation in `firestore.rules` and the detailed explanation in `documentations/leaderboard-security.md`.
 
 ## File Locations
 - User operations: `src/lib/db_user.ts`
 - Quiz operations: `src/lib/db_quiz.ts`
+- Reports operations: `src/lib/utils/db_reports.ts`
+- Leaderboard operations: `src/lib/leaderboard.ts`
 - Report operations: `src/lib/utils/db_reports.ts`
 - Logging operations: `src/lib/db_logs.ts`

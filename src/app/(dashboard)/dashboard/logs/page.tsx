@@ -165,6 +165,11 @@ export default function LogsPage() {
     }
 
     useEffect(() => {
+        // Set page title
+        document.title = "System Logs - AzoozGAT Platform";
+    }, []);
+
+    useEffect(() => {
         async function fetchLogs() {
             setLoading(true);
             try {

@@ -16,7 +16,7 @@ export default function Dashboard() {
 
         async function redirectBasedOnRole() {
             setIsRedirecting(true)
-
+            document.title = "Redirecting to Dashboard - AzoozGAT Platform"
             if (!user) {
                 router.push('/login')
                 return

@@ -15,7 +15,7 @@ import { Separator } from "@/components/ui/separator";
 import { Loader, PlayIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-import { useEffect } from "react";
+import { use, useEffect } from "react";
 import { useState } from "react";
 import { Question, Quiz } from "@/data/quiz";
 import { getQuizzes } from "@/lib/db_quiz";
@@ -70,6 +70,11 @@ export default function Quizzes() {
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
     const [rowSelection, setRowSelection] = useState({})
     const router = useRouter()
+
+    useEffect(() => {
+        // Set page title
+        document.title = "Quizzes - AzoozGAT Platform";
+    }, []);
 
     const columns: ColumnDef<Quiz>[] = [
         {

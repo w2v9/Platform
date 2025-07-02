@@ -11,6 +11,10 @@ export default function Home() {
   const { user } = useAuth();
   const router = useRouter();
 
+  // Set page title
+  useEffect(() => {
+    document.title = "AzoozGAT Platform - Home";
+  }, []);
 
   useEffect(() => {
     if (user) {

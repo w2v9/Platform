@@ -262,10 +262,17 @@ export default function ResultsPage() {
         return format(new Date(dateString), "PPP");
     };
 
-    const formatTime = (seconds: number) => {
-        const minutes = Math.floor(seconds / 60);
-        const remainingSeconds = seconds % 60;
-        return `${minutes}m ${remainingSeconds}s`;
+    const formatTime = (minutes: number) => {
+        if (minutes < 1) {
+            const seconds = Math.round(minutes * 60);
+            return `${seconds}s`;
+        }
+        const wholeMinutes = Math.floor(minutes);
+        const seconds = Math.round((minutes - wholeMinutes) * 60);
+        if (seconds === 0) {
+            return `${wholeMinutes}m`;
+        }
+        return `${wholeMinutes}m ${seconds}s`;
     };
 
     const getScoreColor = (percentage?: number) => {

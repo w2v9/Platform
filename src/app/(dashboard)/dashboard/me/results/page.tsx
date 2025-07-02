@@ -75,6 +75,9 @@ export default function ResultsPage() {
 
     const [filters, setFilters] = useState(scoreRanges);
 
+    useEffect(() => {
+        document.title = "Quiz Results - AzoozGAT Platform";
+    }, []);
 
     useEffect(() => {
         async function fetchReports() {
@@ -95,6 +98,13 @@ export default function ResultsPage() {
 
                 const uniqueQuizIds = [...new Set(reportData.map(report => report.quizId))];
                 setQuizIds(uniqueQuizIds);
+
+                // Sort reports by date taken, most recent first
+                reportData.sort((a, b) => {
+                    const dateA = new Date(a.dateTaken || 0);
+                    const dateB = new Date(b.dateTaken || 0);
+                    return dateB.getTime() - dateA.getTime();
+                });
 
                 setReports(reportData);
                 setFilteredReports(reportData);
@@ -181,16 +191,19 @@ export default function ResultsPage() {
         return format(new Date(dateString), "PPP");
     };
 
-    const formatTime = (seconds: number) => {
-        seconds = Math.floor(seconds);
+    const formatTime = (minutes: number) => {
+        if (minutes < 1) {
+            const seconds = Math.round(minutes * 60);
+            return `${String(seconds).padStart(2, "0")}s`;
+        }
 
-        const minutes = Math.floor(seconds / 60);
-        const remainingSeconds = seconds % 60;
+        const wholeMinutes = Math.floor(minutes);
+        const seconds = Math.round((minutes - wholeMinutes) * 60);
 
-        const formattedMinutes = String(minutes).padStart(2, "0");
-        const formattedSeconds = String(remainingSeconds).padStart(2, "0");
+        const formattedMinutes = String(wholeMinutes).padStart(2, "0");
+        const formattedSeconds = String(seconds).padStart(2, "0");
 
-        return `${formattedMinutes}:${formattedSeconds}s`;
+        return `${formattedMinutes}:${formattedSeconds}`;
     };
 
     const getScoreColor = (percentage?: number) => {
@@ -449,7 +462,7 @@ export default function ResultsPage() {
                                         <TableCell>
                                             <div className="flex items-center">
                                                 <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
-                                                {formatTime(report.timeTaken * 60)}
+                                                {formatTime(report.timeTaken)}
                                             </div>
                                         </TableCell>
                                         <TableCell className="text-right">

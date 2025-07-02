@@ -30,6 +30,11 @@ export default function LoginPage() {
     const { user } = useAuth()
     const [isSubmitting, setIsSubmitting] = useState(false)
 
+    // Set page title
+    useEffect(() => {
+        document.title = "Login - AzoozGAT Platform"
+    }, [])
+
     useEffect(() => {
         if (user) {
             router.push("/dashboard")
