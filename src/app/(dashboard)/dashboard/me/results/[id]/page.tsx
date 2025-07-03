@@ -22,6 +22,7 @@ import {
     Award,
     ChevronRight,
     ChevronDown,
+    Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,6 +33,8 @@ import {
 } from "@/components/ui/accordion";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 
 export default function ReportPage({ params }: { params: Promise<{ id: string }> }) {
     const unwrappedParams = use(params);
@@ -41,10 +44,6 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // Set page title
-    useEffect(() => {
-        document.title = "Quiz Report  for " + quizData.title + " - AzoozGAT Platform";
-    }, [quizData]);
 
     useEffect(() => {
         const fetchReport = async () => {
@@ -58,6 +57,8 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                         const quiz = await getQuizById(report.quizId);
                         if (quiz) {
                             setQuizData(quiz);
+                            // Set page title after fetching quiz data
+                            document.title = `Quiz Report for ${quiz.title} - AzoozGAT Platform`;
                         } else {
                             setError("Quiz not found");
                         }
@@ -118,200 +119,268 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
 
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center h-[calc(100vh-200px)]">
-                <div className="flex flex-col items-center gap-2">
-                    <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"></div>
-                    <p className="text-muted-foreground">Loading report...</p>
+            <SidebarInset>
+                <header className="flex h-10 shrink-0 items-center gap-2 border-b px-4">
+                    <SidebarTrigger className="-ml-1" />
+                    <Separator orientation="vertical" className="mr-2 h-4" />
+                    <Breadcrumb>
+                        <BreadcrumbList>
+                            <BreadcrumbItem>
+                                <BreadcrumbLink href="/dashboard/">Dashboard</BreadcrumbLink>
+                            </BreadcrumbItem>
+                            <BreadcrumbSeparator />
+                            <BreadcrumbItem>
+                                <BreadcrumbPage>Results</BreadcrumbPage>
+                            </BreadcrumbItem>
+                        </BreadcrumbList>
+                    </Breadcrumb>
+                </header>
+                <div className="h-screen flex items-center justify-center">
+                    <div className="flex flex-col items-center gap-2">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        <p className="text-sm text-muted-foreground">Loading detailed results view...</p>
+                    </div>
                 </div>
-            </div>
+            </SidebarInset>
         );
     }
 
     if (error) {
         return (
-            <div className="flex items-center justify-center h-[calc(100vh-200px)]">
-                <Card className="w-full max-w-md">
-                    <CardHeader>
-                        <CardTitle className="text-destructive">Error</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p>{error}</p>
-                    </CardContent>
-                    <CardFooter>
-                        <Button variant="outline" onClick={() => window.history.back()}>
-                            Go Back
-                        </Button>
-                    </CardFooter>
-                </Card>
-            </div>
+            <SidebarInset>
+                <header className="flex h-10 shrink-0 items-center gap-2 border-b px-4">
+                    <SidebarTrigger className="-ml-1" />
+                    <Separator orientation="vertical" className="mr-2 h-4" />
+                    <Breadcrumb>
+                        <BreadcrumbList>
+                            <BreadcrumbItem>
+                                <BreadcrumbLink href="/dashboard/">Dashboard</BreadcrumbLink>
+                            </BreadcrumbItem>
+                            <BreadcrumbSeparator />
+                            <BreadcrumbItem>
+                                <BreadcrumbPage>Results</BreadcrumbPage>
+                            </BreadcrumbItem>
+                        </BreadcrumbList>
+                    </Breadcrumb>
+                </header>
+                <div className="flex items-center justify-center h-[calc(100vh-200px)]">
+                    <Card className="w-full max-w-md">
+                        <CardHeader>
+                            <CardTitle className="text-destructive">Error</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p>{error}</p>
+                        </CardContent>
+                        <CardFooter>
+                            <Button variant="outline" onClick={() => window.history.back()}>
+                                Go Back
+                            </Button>
+                        </CardFooter>
+                    </Card>
+                </div>
+            </SidebarInset>
         );
     }
 
     if (!reportData || !quizData) {
         return (
-            <div className="flex items-center justify-center h-[calc(100vh-200px)]">
-                <Card className="w-full max-w-md">
-                    <CardHeader>
-                        <CardTitle>No Data Available</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p>The report or quiz data could not be found.</p>
-                    </CardContent>
-                    <CardFooter>
-                        <Button variant="outline" onClick={() => window.history.back()}>
-                            Go Back
-                        </Button>
-                    </CardFooter>
-                </Card>
-            </div>
+            <SidebarInset>
+                <header className="flex h-10 shrink-0 items-center gap-2 border-b px-4">
+                    <SidebarTrigger className="-ml-1" />
+                    <Separator orientation="vertical" className="mr-2 h-4" />
+                    <Breadcrumb>
+                        <BreadcrumbList>
+                            <BreadcrumbItem>
+                                <BreadcrumbLink href="/dashboard/">Dashboard</BreadcrumbLink>
+                            </BreadcrumbItem>
+                            <BreadcrumbSeparator />
+                            <BreadcrumbItem>
+                                <BreadcrumbPage>Results</BreadcrumbPage>
+                            </BreadcrumbItem>
+                        </BreadcrumbList>
+                    </Breadcrumb>
+                </header>
+                <div className="flex items-center justify-center h-[calc(100vh-200px)]">
+                    <Card className="w-full max-w-md">
+                        <CardHeader>
+                            <CardTitle>No Data Available</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p>The report or quiz data could not be found.</p>
+                        </CardContent>
+                        <CardFooter>
+                            <Button variant="outline" onClick={() => window.history.back()}>
+                                Go Back
+                            </Button>
+                        </CardFooter>
+                    </Card>
+                </div>
+            </SidebarInset>
         );
-    } return (
-        <div className="container max-w-5xl mx-auto py-4 sm:py-6 px-4 sm:px-6 space-y-4 sm:space-y-8">
-            {/* Report Summary Card */}
-            <Card>
-                <CardHeader className="p-4 sm:p-6">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                        <div>
-                            <CardTitle className="text-xl sm:text-2xl">{reportData.quizTitle}</CardTitle>
-                            <CardDescription className="text-sm">
-                                Completed on {new Date(reportData.dateTaken).toLocaleDateString()} by {reportData.userName}
-                            </CardDescription>
-                        </div>
-                        <Badge
-                            variant={reportData.percentageScore >= 70 ? "default" : "destructive"}
-                            className="text-base sm:text-lg h-7 sm:h-8 px-2 sm:px-3"
-                        >
-                            Score: {reportData.percentageScore.toFixed(0)}%
-                        </Badge>
-                    </div>                </CardHeader>
-                <CardContent className="p-4 sm:p-6">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6">
-                        <div className="flex flex-col items-center justify-center bg-muted p-3 sm:p-4 rounded-lg">
-                            <BarChart3 className="h-6 w-6 sm:h-8 sm:w-8 text-primary mb-1 sm:mb-2" />
-                            <div className="text-center">
-                                <p className="text-muted-foreground text-xs sm:text-sm">Score</p>
-                                <p className="text-base sm:text-xl font-bold">
-                                    {reportData.score} / {reportData.maxScore}
-                                </p>
+    }
+    return (
+        <SidebarInset>
+            <header className="flex h-10 shrink-0 items-center gap-2 border-b px-4">
+                <SidebarTrigger className="-ml-1" />
+                <Separator orientation="vertical" className="mr-2 h-4" />
+                <Breadcrumb>
+                    <BreadcrumbList>
+                        <BreadcrumbItem>
+                            <BreadcrumbLink href="/dashboard/">Dashboard</BreadcrumbLink>
+                        </BreadcrumbItem>
+                        <BreadcrumbSeparator />
+                        <BreadcrumbItem>
+                            <BreadcrumbPage>Results</BreadcrumbPage>
+                        </BreadcrumbItem>
+                    </BreadcrumbList>
+                </Breadcrumb>
+            </header>
+            <div className="container max-w-5xl mx-auto py-4 sm:py-6 px-4 sm:px-6 space-y-4 sm:space-y-8">
+                {/* Report Summary Card */}
+                <Card>
+                    <CardHeader className="p-4 sm:p-6">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div>
+                                <CardTitle className="text-xl sm:text-2xl">{reportData.quizTitle}</CardTitle>
+                                <CardDescription className="text-sm">
+                                    Completed on {new Date(reportData.dateTaken).toLocaleDateString()} by {reportData.userName}
+                                </CardDescription>
+                            </div>
+                            <Badge
+                                variant={reportData.percentageScore >= 70 ? "default" : "destructive"}
+                                className="text-base sm:text-lg h-7 sm:h-8 px-2 sm:px-3"
+                            >
+                                Score: {reportData.percentageScore.toFixed(0)}%
+                            </Badge>
+                        </div>                </CardHeader>
+                    <CardContent className="p-4 sm:p-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6">
+                            <div className="flex flex-col items-center justify-center bg-muted p-3 sm:p-4 rounded-lg">
+                                <BarChart3 className="h-6 w-6 sm:h-8 sm:w-8 text-primary mb-1 sm:mb-2" />
+                                <div className="text-center">
+                                    <p className="text-muted-foreground text-xs sm:text-sm">Score</p>
+                                    <p className="text-base sm:text-xl font-bold">
+                                        {reportData.score} / {reportData.maxScore}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col items-center justify-center bg-muted p-3 sm:p-4 rounded-lg">
+                                <Clock className="h-6 w-6 sm:h-8 sm:w-8 text-primary mb-1 sm:mb-2" />
+                                <div className="text-center">
+                                    <p className="text-muted-foreground text-xs sm:text-sm">Time Taken</p>
+                                    <p className="text-base sm:text-xl font-bold">
+                                        {formatTime(reportData.timeTaken)}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col items-center justify-center bg-muted p-4 rounded-lg">
+                                <Award className="h-8 w-8 text-primary mb-2" />
+                                <div className="text-center">
+                                    <p className="text-muted-foreground text-sm">Performance</p>
+                                    <p className="text-xl font-bold">
+                                        {reportData.percentageScore >= 90 ? 'Excellent' :
+                                            reportData.percentageScore >= 70 ? 'Good' :
+                                                reportData.percentageScore >= 50 ? 'Average' : 'Needs Improvement'}
+                                    </p>
+                                </div>
                             </div>
                         </div>
 
-                        <div className="flex flex-col items-center justify-center bg-muted p-3 sm:p-4 rounded-lg">
-                            <Clock className="h-6 w-6 sm:h-8 sm:w-8 text-primary mb-1 sm:mb-2" />
-                            <div className="text-center">
-                                <p className="text-muted-foreground text-xs sm:text-sm">Time Taken</p>
-                                <p className="text-base sm:text-xl font-bold">
-                                    {formatTime(reportData.timeTaken)}
-                                </p>
+                        <div className="mt-6">
+                            <div className="flex justify-between mb-2">
+                                <p>Overall Progress</p>
+                                <p>{reportData.percentageScore.toFixed(0)}%</p>
                             </div>
+                            <Progress value={reportData.percentageScore} className="h-2" />
                         </div>
+                    </CardContent>
+                </Card>
 
-                        <div className="flex flex-col items-center justify-center bg-muted p-4 rounded-lg">
-                            <Award className="h-8 w-8 text-primary mb-2" />
-                            <div className="text-center">
-                                <p className="text-muted-foreground text-sm">Performance</p>
-                                <p className="text-xl font-bold">
-                                    {reportData.percentageScore >= 90 ? 'Excellent' :
-                                        reportData.percentageScore >= 70 ? 'Good' :
-                                            reportData.percentageScore >= 50 ? 'Average' : 'Needs Improvement'}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
+                {/* Question Review Section */}
+                <div className="space-y-4">
+                    <h2 className="text-xl font-bold">Question Review</h2>
+                    <Accordion type="single" collapsible className="w-full">
+                        {reportData.selectedOptions?.map((selectedOption: any, index: number) => {
+                            const question = quizData.questions.find((q: any) => q.id === selectedOption.questionId);
+                            const optionSet = getQuestionOptionSet(selectedOption.questionId, selectedOption.optionSetId);
 
-                    <div className="mt-6">
-                        <div className="flex justify-between mb-2">
-                            <p>Overall Progress</p>
-                            <p>{reportData.percentageScore.toFixed(0)}%</p>
-                        </div>
-                        <Progress value={reportData.percentageScore} className="h-2" />
-                    </div>
-                </CardContent>
-            </Card>
+                            if (!question || !optionSet) return null;
 
-            {/* Question Review Section */}
-            <div className="space-y-4">
-                <h2 className="text-xl font-bold">Question Review</h2>
-                <Accordion type="single" collapsible className="w-full">
-                    {reportData.selectedOptions?.map((selectedOption: any, index: number) => {
-                        const question = quizData.questions.find((q: any) => q.id === selectedOption.questionId);
-                        const optionSet = getQuestionOptionSet(selectedOption.questionId, selectedOption.optionSetId);
+                            const isCorrect = selectedOption.selectedOptionId.length === optionSet.answer.length &&
+                                selectedOption.selectedOptionId.every((id: string) => optionSet.answer.includes(id)) &&
+                                optionSet.answer.every((id: string) => selectedOption.selectedOptionId.includes(id));
 
-                        if (!question || !optionSet) return null;
-
-                        const isCorrect = selectedOption.selectedOptionId.length === optionSet.answer.length &&
-                            selectedOption.selectedOptionId.every((id: string) => optionSet.answer.includes(id)) &&
-                            optionSet.answer.every((id: string) => selectedOption.selectedOptionId.includes(id));
-
-                        return (
-                            <AccordionItem key={index} value={`item-${index}`}>
-                                <AccordionTrigger className="hover:bg-accent hover:no-underline px-4 rounded-md">
-                                    <div className="flex items-center gap-3 text-left">
-                                        {isCorrect ? (
-                                            <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
-                                        ) : (
-                                            <XCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
-                                        )}
-                                        <div className="flex-1">
-                                            <span>Question {index + 1}</span>
-                                        </div>
-                                    </div>
-                                </AccordionTrigger>
-                                <AccordionContent className="border rounded-md p-4 mt-2">
-                                    <div className="space-y-4">
-                                        <div>
-                                            <h3 className="font-medium">{question.question}</h3>
-                                            {question.explanation && (
-                                                <p className="text-sm text-muted-foreground mt-2">
-                                                    {question.explanation}
-                                                </p>
+                            return (
+                                <AccordionItem key={index} value={`item-${index}`}>
+                                    <AccordionTrigger className="hover:bg-accent hover:no-underline px-4 rounded-md">
+                                        <div className="flex items-center gap-3 text-left">
+                                            {isCorrect ? (
+                                                <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
+                                            ) : (
+                                                <XCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
                                             )}
+                                            <div className="flex-1">
+                                                <span>Question {index + 1}</span>
+                                            </div>
                                         </div>
+                                    </AccordionTrigger>
+                                    <AccordionContent className="border rounded-md p-4 mt-2">
+                                        <div className="space-y-4">
+                                            <div>
+                                                <h3 className="font-medium">{question.question}</h3>
+                                                {question.explanation && (
+                                                    <p className="text-sm text-muted-foreground mt-2">
+                                                        {question.explanation}
+                                                    </p>
+                                                )}
+                                            </div>
 
-                                        <Separator />
+                                            <Separator />
 
-                                        <div className="space-y-2">
-                                            <p className="font-medium">Options:</p>
-                                            {optionSet.options.map((option: any) => {
-                                                const isSelected = isOptionSelected(question.id, optionSet.id, option.id);
-                                                const isCorrectAns = isCorrectOption(question, optionSet.id, option.id);
+                                            <div className="space-y-2">
+                                                <p className="font-medium">Options:</p>
+                                                {optionSet.options.map((option: any) => {
+                                                    const isSelected = isOptionSelected(question.id, optionSet.id, option.id);
+                                                    const isCorrectAns = isCorrectOption(question, optionSet.id, option.id);
 
-                                                let bgColor = "bg-background";
-                                                if (isSelected && isCorrectAns) bgColor = "bg-green-100";
-                                                else if (isSelected && !isCorrectAns) bgColor = "bg-red-100";
-                                                else if (isCorrectAns) bgColor = "bg-green-50";
+                                                    let bgColor = "bg-background";
+                                                    if (isSelected && isCorrectAns) bgColor = "bg-green-100";
+                                                    else if (isSelected && !isCorrectAns) bgColor = "bg-red-100";
+                                                    else if (isCorrectAns) bgColor = "bg-green-50";
 
-                                                return (
-                                                    <div
-                                                        key={option.id}
-                                                        className={`p-3 border rounded-md flex items-start ${bgColor}`}
-                                                    >
-                                                        <div className="flex-1">
-                                                            <div className="flex items-center gap-2">
-                                                                {isSelected && isCorrectAns && (
-                                                                    <CheckCircle2 className="h-5 w-5 text-green-600" />
-                                                                )}
-                                                                {isSelected && !isCorrectAns && (
-                                                                    <XCircle className="h-5 w-5 text-red-600" />
-                                                                )}
-                                                                {!isSelected && isCorrectAns && (
-                                                                    <AlertCircle className="h-5 w-5 text-green-600" />
-                                                                )}
-                                                                <span className={`
+                                                    return (
+                                                        <div
+                                                            key={option.id}
+                                                            className={`p-3 border rounded-md flex items-start ${bgColor}`}
+                                                        >
+                                                            <div className="flex-1">
+                                                                <div className="flex items-center gap-2">
+                                                                    {isSelected && isCorrectAns && (
+                                                                        <CheckCircle2 className="h-5 w-5 text-green-600" />
+                                                                    )}
+                                                                    {isSelected && !isCorrectAns && (
+                                                                        <XCircle className="h-5 w-5 text-red-600" />
+                                                                    )}
+                                                                    {!isSelected && isCorrectAns && (
+                                                                        <AlertCircle className="h-5 w-5 text-green-600" />
+                                                                    )}
+                                                                    <span className={`
                                   ${isSelected && isCorrectAns ? 'font-medium text-green-800' : ''}
                                   ${isSelected && !isCorrectAns ? 'font-medium text-red-800' : ''}
                                   ${!isSelected && isCorrectAns ? 'font-medium text-green-800' : ''}
                                 `}>
-                                                                    {option.option}
-                                                                </span>
+                                                                        {option.option}
+                                                                    </span>
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
+                                                    );
+                                                })}
+                                            </div>
 
-                                        {/* Feedback section 
+                                            {/* Feedback section 
                                         <div className="mt-4 p-4 bg-muted rounded-md">
                                             <p className="font-medium flex items-center gap-2">
                                                 {isCorrect ? (
@@ -333,23 +402,24 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                                             </p>
                                         </div>
                                                 */}
-                                    </div>
-                                </AccordionContent>
-                            </AccordionItem>
-                        );
-                    })}
-                </Accordion>
-            </div>
+                                        </div>
+                                    </AccordionContent>
+                                </AccordionItem>
+                            );
+                        })}
+                    </Accordion>
+                </div>
 
-            {/* Actions */}
-            <div className="flex justify-end gap-4 mt-8">
-                <Button variant="outline" onClick={() => window.history.back()}>
-                    Back to Results
-                </Button>
-                <Button onClick={() => window.location.href = `/quiz/${reportData.quizId}`}>
-                    Try Again
-                </Button>
+                {/* Actions */}
+                <div className="flex justify-end gap-4 mt-8">
+                    <Button variant="outline" onClick={() => window.history.back()}>
+                        Back to Results
+                    </Button>
+                    <Button onClick={() => window.location.href = `/quiz/${reportData.quizId}`}>
+                        Try Again
+                    </Button>
+                </div>
             </div>
-        </div>
+        </SidebarInset>
     );
 }
