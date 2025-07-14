@@ -44,6 +44,36 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    useEffect(() => {
+        // Prevent right-click context menu
+        const handleContextMenu = (e: MouseEvent) => {
+            e.preventDefault();
+        };
+
+        // Prevent keyboard shortcuts (Ctrl+C, Ctrl+X, Ctrl+U for source)
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.ctrlKey || e.metaKey) { // ctrl for windows, meta for mac
+                switch (e.key) {
+                    case 'c': // Copy
+                    case 'x': // Cut
+                    case 'u': // View Source
+                    case 's': // Save
+                        e.preventDefault();
+                        break;
+                }
+            }
+        };
+        
+        document.addEventListener('contextmenu', handleContextMenu);
+        document.addEventListener('keydown', handleKeyDown);
+
+        // Cleanup: remove event listeners when the component unmounts
+        return () => {
+            document.removeEventListener('contextmenu', handleContextMenu);
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, []);
+
 
     useEffect(() => {
         const fetchReport = async () => {
@@ -219,7 +249,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
         );
     }
     return (
-        <SidebarInset>
+        <SidebarInset className="no-copy">
             <header className="flex h-10 shrink-0 items-center gap-2 border-b px-4">
                 <SidebarTrigger className="-ml-1" />
                 <Separator orientation="vertical" className="mr-2 h-4" />
@@ -235,9 +265,9 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                     </BreadcrumbList>
                 </Breadcrumb>
             </header>
-            <div className="container max-w-5xl mx-auto py-4 sm:py-6 px-4 sm:px-6 space-y-4 sm:space-y-8">
+            <div className="container max-w-5xl mx-auto py-4 sm:py-6 px-4 sm:px-6 space-y-4 sm:space-y-8 no-copy">
                 {/* Report Summary Card */}
-                <Card>
+                <Card className="no-copy">
                     <CardHeader className="p-4 sm:p-6">
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                             <div>
@@ -299,7 +329,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                 </Card>
 
                 {/* Question Review Section */}
-                <div className="space-y-4">
+                <div className="space-y-4 no-copy">
                     <h2 className="text-xl font-bold">Question Review</h2>
                     <Accordion type="single" collapsible className="w-full">
                         {reportData.selectedOptions?.map((selectedOption: any, index: number) => {
