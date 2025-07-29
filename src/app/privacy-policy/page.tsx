@@ -35,7 +35,7 @@ export default function PrivacyPolicyPage() {
             <h2 className="text-2xl font-semibold text-gray-800 mb-3">2. Information We Collect</h2>
             <p>To provide and improve our service, we collect the following information:</p>
             <ul className="list-disc list-inside space-y-2 mt-2 pl-4">
-              <li><strong className="font-medium">Contact Information:</strong> Your full name, phone number, email address, and Telegram account ID.</li>
+              <li><strong className="font-medium">Contact Information:</strong> Your full name, phone number, email address, and Telegram username.</li>
               <li><strong className="font-medium">Transaction Information:</strong> Proof of payment from a bank transfer, which includes details of the transaction.</li>
               <li><strong className="font-medium">Communication Data:</strong> Any messages, questions, or feedback you send to us directly.</li>
             </ul>
@@ -46,7 +46,7 @@ export default function PrivacyPolicyPage() {
             <p>The information we collect is used solely for these purposes:</p>
             <ul className="list-disc list-inside space-y-2 mt-2 pl-4">
               <li>To Process Orders: To confirm your payment and verify your purchase.</li>
-              <li>To Deliver Products: To provide you with the tajme3at files you have purchased.</li>
+              <li>To Deliver Products: To send you the tajme3at files you have purchased.</li>
               <li>To Communicate: To respond to your questions and provide customer support.</li>
               <li>To Improve Your Experience: To understand customer needs and enhance the services offered on the AzoozGAT platform.</li>
               <li>For Record-Keeping: To maintain internal records of transactions as required by Saudi Arabian law.</li>
@@ -74,7 +74,8 @@ export default function PrivacyPolicyPage() {
           <section>
             <h2 className="text-2xl font-semibold text-gray-800 mb-3">6. Your Rights Under the Personal Data Protection Law (PDPL)</h2>
             <p>
-              As per Saudi Arabia's Personal Data Protection Law, you have the following rights regarding your personal data:
+              {/* THIS IS THE LINE I FIXED */}
+              As per Saudi Arabia&apos;s Personal Data Protection Law, you have the following rights regarding your personal data:
             </p>
              <ul className="list-disc list-inside space-y-2 mt-2 pl-4">
                 <li><strong className="font-medium">Right to Access:</strong> You can request a copy of the personal information we hold about you.</li>
@@ -82,7 +83,7 @@ export default function PrivacyPolicyPage() {
                 <li><strong className="font-medium">Right to Destruction:</strong> You can request the deletion of your personal data when it is no longer needed for the purpose it was collected.</li>
              </ul>
              <p className="mt-2">
-               Please note, we may be legally required to retain certain data after a request of deletion (such as financial transaction records) for a specific period to comply with legal or regulatory obligations.
+               Please note, we may be legally required to retain certain data (such as financial transaction records) for a specific period to comply with legal or regulatory obligations.
              </p>
           </section>
 
@@ -103,7 +104,7 @@ export default function PrivacyPolicyPage() {
           <section>
             <h2 className="text-2xl font-semibold text-gray-800 mb-3">9. Contact Us</h2>
             <p>
-              If you have any questions about this Privacy Policy or wish to exercise your rights, please contact us via our official Telegram account: <a href="https://t.me/AzoozGAT" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">https://t.me/AzoozGAT</a>
+              If you have any questions about this Privacy Policy or wish to exercise your rights, please contact us via our official Telegram channel: <a href="https://t.me/AzoozGAT" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">https://t.me/AzoozGAT</a>
             </p>
           </section>
 
