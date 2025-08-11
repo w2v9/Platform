@@ -455,7 +455,7 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
                         <div className={`quiz-page-transition ${isAnimating ? 'pointer-events-none' : ''}`}>
                             <div className={`w-full h-full ${isAnimating ?
                                 (animationDirection === 'next' ? 'quiz-animate-next-in' : 'quiz-animate-prev-in') : ''}`}>
-                                <div className="flex flex-col md:flex-row h-full rounded-lg border">                                <div className="w-full md:w-[40%] h-full md:block hidden">
+                                <div className="flex flex-col md:flex-row h-full rounded-lg border">                                <div className="w-full md:w-[50%] h-full md:block hidden">
                                     <div className="flex h-full items-center justify-center p-2 sm:p-4 md:p-6">
                                         <ScrollArea className="h-full w-full" style={{ WebkitOverflowScrolling: 'touch' }}>
                                             {isAnimating ? (
@@ -470,7 +470,7 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
                                             ) : (<>
                                                 {isDesktop ? (
                                                     <>
-                                                        <h2 className="font-bold text-sm sm:text-base">Explanation:</h2>
+                                                        <h2 className="font-bold text-sm sm:text-base"></h2>
                                                         <div className="text-gray-700 text-xs sm:text-sm prose prose-sm max-w-none">
                                                             <ReactMarkdown
                                                                 rehypePlugins={[rehypeSanitize]}
@@ -505,7 +505,7 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
                                     </div>
                                 </div>
                                     <div className="hidden md:block w-[1px] bg-gray-200 my-2"></div>
-                                    <div className="w-full h-full">
+                                    <div className="w-full md:w-[50%] h-full">
                                         <div className="h-full overflow-auto p-2 sm:p-4">
                                             <div className="flex flex-col h-full gap-4">
                                                 <div className="py-2 sm:py-4">
