@@ -23,6 +23,12 @@ import { db, auth } from "./config/firebase-config";
 import { getDeviceInfo } from "./utils/getDeviceInfo";
 import { getIpAndLocation } from "./utils/getIpLocation";
 import { deleteUser as firebaseDeleteUser } from "firebase/auth";
+
+// Utility function to generate unique session ID
+function generateSessionId(): string {
+    return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
+
 export type UserRole = "user" | "admin";
 export type UserStatus = "inactive" | "active" | "warned" | "banned";
 export type UserStatusColor = {
@@ -46,11 +52,20 @@ export type Metadata = {
     createdAt: string;
     updatedAt: string;
     lastLoginAt?: string;
+    currentSession?: {
+        loginAt: string;
+        ip?: string;
+        location?: Location;
+        device?: Device;
+        sessionId: string;
+    };
     sessions?: Array<{
         loginAt: string;
         ip?: string;
         location?: Location;
         device?: Device;
+        sessionId: string;
+        endedAt?: string;
     }>;
 };
 
@@ -163,20 +178,48 @@ export async function loginUser(email: string, password: string) {
 
         const deviceInfo: Device = getDeviceInfo();
         const { ip, location } = await getIpAndLocation();
+        const sessionId = generateSessionId();
 
         const sessionData = {
             loginAt: new Date().toISOString(),
             ip,
             location,
-            device: deviceInfo
+            device: deviceInfo,
+            sessionId
         };
 
         const updateData: any = {
             status: "active",
             "metadata.lastLoginAt": new Date().toISOString(),
-            "metadata.sessions": [...(userData.metadata.sessions || []), sessionData],
             "metadata.updatedAt": new Date().toISOString(),
         };
+
+        // For users with "user" role, implement single session management
+        let sessionTerminated = false;
+        if (userData.role === "user") {
+            // If there's an existing current session, end it and add to sessions history
+            if (userData.metadata.currentSession) {
+                const endedSession = {
+                    ...userData.metadata.currentSession,
+                    endedAt: new Date().toISOString()
+                };
+                
+                updateData["metadata.sessions"] = [
+                    ...(userData.metadata.sessions || []),
+                    endedSession
+                ];
+                sessionTerminated = true;
+            }
+            
+            // Set the new current session
+            updateData["metadata.currentSession"] = sessionData;
+        } else {
+            // For admins, allow multiple sessions (just add to sessions array)
+            updateData["metadata.sessions"] = [
+                ...(userData.metadata.sessions || []),
+                sessionData
+            ];
+        }
 
         await updateDoc(userRef, updateData);
 
@@ -198,6 +241,15 @@ export async function loginUser(email: string, password: string) {
             };
         }
 
+        // Add session termination message for user role
+        if (userData.role === "user" && sessionTerminated) {
+            return {
+                user: updatedUserData,
+                statusMessage: "session_terminated",
+                message: "Your previous session has been terminated. You can now only be logged in from one device at a time."
+            };
+        }
+
         return {
             user: updatedUserData,
             statusMessage: "success",
@@ -214,10 +266,33 @@ export async function logoutUser() {
     const user = auth.currentUser;
     if (user) {
         const userRef = doc(db, "users", user.uid);
-        await updateDoc(userRef, {
-            status: "inactive",
-            "metadata.updatedAt": new Date().toISOString()
-        });
+        
+        // Get current user data to check role and current session
+        const userDoc = await getDoc(userRef);
+        if (userDoc.exists()) {
+            const userData = userDoc.data() as User;
+            
+            const updateData: any = {
+                status: "inactive",
+                "metadata.updatedAt": new Date().toISOString()
+            };
+
+            // For users with "user" role, end the current session
+            if (userData.role === "user" && userData.metadata.currentSession) {
+                const endedSession = {
+                    ...userData.metadata.currentSession,
+                    endedAt: new Date().toISOString()
+                };
+                
+                updateData["metadata.sessions"] = [
+                    ...(userData.metadata.sessions || []),
+                    endedSession
+                ];
+                updateData["metadata.currentSession"] = null;
+            }
+
+            await updateDoc(userRef, updateData);
+        }
     }
 
     return signOut(auth);
@@ -225,6 +300,57 @@ export async function logoutUser() {
 
 export async function resetPasswordMail(email: string) {
     return sendPasswordResetEmail(auth, email);
+}
+
+// Function to check if user has an active session (for user role only)
+export async function checkActiveSession(userId: string): Promise<boolean> {
+    try {
+        const userDoc = await getDoc(doc(db, "users", userId));
+        if (!userDoc.exists()) return false;
+        
+        const userData = userDoc.data() as User;
+        
+        // Only check for user role (admins can have multiple sessions)
+        if (userData.role !== "user") return false;
+        
+        return userData.metadata.currentSession !== undefined && 
+               userData.metadata.currentSession !== null;
+    } catch (error) {
+        console.error("Error checking active session:", error);
+        return false;
+    }
+}
+
+// Function to force logout all sessions for a user (admin function)
+export async function forceLogoutUser(userId: string): Promise<void> {
+    try {
+        const userRef = doc(db, "users", userId);
+        const userDoc = await getDoc(userRef);
+        
+        if (!userDoc.exists()) return;
+        
+        const userData = userDoc.data() as User;
+        
+        if (userData.role === "user" && userData.metadata.currentSession) {
+            const endedSession = {
+                ...userData.metadata.currentSession,
+                endedAt: new Date().toISOString()
+            };
+            
+            await updateDoc(userRef, {
+                status: "inactive",
+                "metadata.currentSession": null,
+                "metadata.sessions": [
+                    ...(userData.metadata.sessions || []),
+                    endedSession
+                ],
+                "metadata.updatedAt": new Date().toISOString()
+            });
+        }
+    } catch (error) {
+        console.error("Error forcing logout:", error);
+        throw error;
+    }
 }
 
 export async function getUserById(userId: string): Promise<User | null> {

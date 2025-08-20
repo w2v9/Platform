@@ -19,6 +19,7 @@ import { getAllReports, type QuizReport } from "@/lib/utils/db_reports"
 import { collection, getDocs, query, orderBy, limit } from "firebase/firestore"
 import { useEffect, useState } from "react"
 import type { Log } from "@/lib/db_logs"
+import { checkActiveSession, forceLogoutUser } from "@/lib/db_user"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Activity,
@@ -31,6 +32,7 @@ import {
   CheckCircle2,
   Calendar,
   User as UserIcon,
+  Shield,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -240,10 +242,11 @@ export default function Page() {
 
           {/* Charts and Tables Section */}
           <Tabs defaultValue="overview">
-            <TabsList className="grid w-full grid-cols-3 mb-8 h-12">
+            <TabsList className="grid w-full grid-cols-4 mb-8 h-12">
               <TabsTrigger value="overview">Platform Overview</TabsTrigger>
               <TabsTrigger value="quizzes">Quiz Metrics</TabsTrigger>
               <TabsTrigger value="users">User Activity</TabsTrigger>
+              <TabsTrigger value="sessions">Session Management</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="space-y-4">
@@ -874,6 +877,242 @@ export default function Page() {
                   <Button variant="outline" className="w-full mt-4" asChild>
                     <a href="/dashboard/users">Manage Users</a>
                   </Button>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="sessions" className="space-y-4">
+              {/* Active Sessions Overview */}
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Active Sessions</CardTitle>
+                    <UsersIcon className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {users.filter(user => user.role === "user" && user.metadata.currentSession).length}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Users currently logged in
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Inactive Users</CardTitle>
+                    <UserIcon className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {users.filter(user => user.role === "user" && !user.metadata.currentSession).length}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Users not currently logged in
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Admin Sessions</CardTitle>
+                    <Shield className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {users.filter(user => user.role === "admin").length}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Admin accounts (multi-session enabled)
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Session Policy</CardTitle>
+                    <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">Single</div>
+                    <p className="text-xs text-muted-foreground">
+                      One session per user account
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Active Sessions Table */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Active User Sessions</CardTitle>
+                  <CardDescription>
+                    Currently logged in users with session details
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>User</TableHead>
+                        <TableHead>Login Time</TableHead>
+                        <TableHead>IP Address</TableHead>
+                        <TableHead>Location</TableHead>
+                        <TableHead>Device</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {users
+                        .filter(user => user.role === "user" && user.metadata.currentSession)
+                        .map((user) => {
+                          const session = user.metadata.currentSession;
+                          return (
+                            <TableRow key={user.id}>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <Avatar className="h-8 w-8">
+                                    <AvatarFallback>{user.displayName?.charAt(0) || user.email?.charAt(0) || '?'}</AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <p className="font-medium">{user.displayName || user.email}</p>
+                                    <p className="text-xs text-muted-foreground">{user.email}</p>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                {session?.loginAt ? format(new Date(session.loginAt), 'MMM d, yyyy h:mm a') : 'N/A'}
+                              </TableCell>
+                              <TableCell>
+                                <span className="font-mono text-sm">{session?.ip || 'N/A'}</span>
+                              </TableCell>
+                              <TableCell>
+                                {session?.location ? (
+                                  <div className="text-sm">
+                                    <div>{session.location.city || 'Unknown'}</div>
+                                    <div className="text-xs text-muted-foreground">
+                                      {session.location.country || 'Unknown'}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  'N/A'
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                {session?.device ? (
+                                  <div className="text-sm">
+                                    <div>{session.device.browser || 'Unknown'}</div>
+                                    <div className="text-xs text-muted-foreground">
+                                      {session.device.os || 'Unknown'} • {session.device.type || 'Unknown'}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  'N/A'
+                                )}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Button 
+                                  variant="destructive" 
+                                  size="sm"
+                                  onClick={async () => {
+                                    try {
+                                      await forceLogoutUser(user.id);
+                                      // Refresh the page to update the data
+                                      window.location.reload();
+                                    } catch (error) {
+                                      console.error('Error forcing logout:', error);
+                                    }
+                                  }}
+                                >
+                                  Force Logout
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                    </TableBody>
+                  </Table>
+
+                  {users.filter(user => user.role === "user" && user.metadata.currentSession).length === 0 && (
+                    <div className="text-center p-4">
+                      <p className="text-muted-foreground">No active user sessions</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Session History */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Recent Session History</CardTitle>
+                  <CardDescription>
+                    Recent login and logout events for user accounts
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>User</TableHead>
+                        <TableHead>Event</TableHead>
+                        <TableHead>Time</TableHead>
+                        <TableHead>IP Address</TableHead>
+                        <TableHead>Duration</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {users
+                        .filter(user => user.role === "user" && user.metadata.sessions && user.metadata.sessions.length > 0)
+                        .flatMap(user => 
+                          user.metadata.sessions!.map(session => ({
+                            user,
+                            session,
+                            event: session.endedAt ? 'Logout' : 'Login'
+                          }))
+                        )
+                        .sort((a, b) => new Date(b.session.loginAt).getTime() - new Date(a.session.loginAt).getTime())
+                        .slice(0, 10)
+                        .map((item, index) => {
+                          const duration = item.session.endedAt 
+                            ? Math.round((new Date(item.session.endedAt).getTime() - new Date(item.session.loginAt).getTime()) / (1000 * 60))
+                            : null;
+                          
+                          return (
+                            <TableRow key={`${item.user.id}-${item.session.sessionId}-${index}`}>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <Avatar className="h-6 w-6">
+                                    <AvatarFallback>{item.user.displayName?.charAt(0) || item.user.email?.charAt(0) || '?'}</AvatarFallback>
+                                  </Avatar>
+                                  <span className="font-medium">{item.user.displayName || item.user.email}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={item.event === 'Login' ? 'default' : 'secondary'}>
+                                  {item.event}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {format(new Date(item.session.loginAt), 'MMM d, yyyy h:mm a')}
+                              </TableCell>
+                              <TableCell>
+                                <span className="font-mono text-sm">{item.session.ip || 'N/A'}</span>
+                              </TableCell>
+                              <TableCell>
+                                {duration ? `${duration} min` : 'Active'}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                    </TableBody>
+                  </Table>
+
+                  {users.filter(user => user.role === "user" && user.metadata.sessions && user.metadata.sessions.length > 0).length === 0 && (
+                    <div className="text-center p-4">
+                      <p className="text-muted-foreground">No session history available</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>

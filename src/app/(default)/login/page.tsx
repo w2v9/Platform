@@ -64,6 +64,8 @@ export default function LoginPage() {
                         toast.info(response.message);
                     } else if (response.statusMessage === "new_account") {
                         toast.info(response.message);
+                    } else if (response.statusMessage === "session_terminated") {
+                        toast.warning(response.message);
                     }
                     toast.success("Login successful!");
                 }
