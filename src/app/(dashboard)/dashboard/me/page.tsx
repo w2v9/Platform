@@ -84,21 +84,36 @@ export default function ProfilePage() {
         try {
             setUpdating(true);
 
+            // For users with "user" role, only allow updating photoURL
+            const updateData: any = {
+                "metadata.updatedAt": new Date().toISOString()
+            };
+
+            if (userData.role === "admin") {
+                // Admins can update all fields
+                updateData.displayName = formData.displayName;
+                updateData.phone = formData.phone;
+                updateData.photoURL = formData.photoURL;
+            } else {
+                // Users can only update photoURL
+                updateData.photoURL = formData.photoURL;
+            }
+
             // Update Firestore document
             const userRef = doc(db, "users", user.uid);
-            await updateDoc(userRef, {
-                displayName: formData.displayName,
-                phone: formData.phone,
-                photoURL: formData.photoURL,
-                "metadata.updatedAt": new Date().toISOString()
-            });
+            await updateDoc(userRef, updateData);
 
             // Update Firebase Auth profile
             if (auth.currentUser) {
-                await updateProfile(auth.currentUser, {
-                    displayName: formData.displayName,
+                const authUpdateData: any = {
                     photoURL: formData.photoURL
-                });
+                };
+                
+                if (userData.role === "admin") {
+                    authUpdateData.displayName = formData.displayName;
+                }
+                
+                await updateProfile(auth.currentUser, authUpdateData);
             }
 
             // Refresh user data
@@ -348,7 +363,13 @@ export default function ProfilePage() {
                                         value={formData.displayName}
                                         onChange={handleInputChange}
                                         placeholder="Your name"
+                                        disabled={userData.role === "user"}
                                     />
+                                    {userData.role === "user" && (
+                                        <p className="text-sm text-muted-foreground">
+                                            Display name cannot be changed for user accounts. Contact an administrator if you need to update this information.
+                                        </p>
+                                    )}
                                 </div>
 
                                 <div className="space-y-2">
@@ -359,7 +380,13 @@ export default function ProfilePage() {
                                         value={formData.phone || ''}
                                         onChange={handleInputChange}
                                         placeholder="Your phone number"
+                                        disabled={userData.role === "user"}
                                     />
+                                    {userData.role === "user" && (
+                                        <p className="text-sm text-muted-foreground">
+                                            Phone number cannot be changed for user accounts. Contact an administrator if you need to update this information.
+                                        </p>
+                                    )}
                                 </div>
 
                                 <div className="space-y-2">
