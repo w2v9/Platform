@@ -41,7 +41,9 @@ export default function ProfilePage() {
     const [formData, setFormData] = useState({
         displayName: "",
         phone: "",
-        photoURL: ""
+        photoURL: "",
+        nickname: "",
+        leaderboardEnabled: true
     });
 
     useEffect(() => {
@@ -57,7 +59,9 @@ export default function ProfilePage() {
                 setFormData({
                     displayName: data?.displayName || "",
                     phone: data?.phone || "",
-                    photoURL: data?.photoURL || ""
+                    photoURL: data?.photoURL || "",
+                    nickname: data?.nickname || "",
+                    leaderboardEnabled: data?.leaderboardEnabled !== false
                 });
             } catch (error) {
                 console.error("Error fetching user data:", error);
@@ -72,14 +76,29 @@ export default function ProfilePage() {
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-        setFormData((prev) => ({
-            ...prev,
-            [name]: value
-        }));
+        setFormData((prev) => {
+            const newData = {
+                ...prev,
+                [name]: value
+            };
+            
+            // If nickname is cleared and leaderboard is enabled, disable leaderboard participation
+            if (name === "nickname" && (!value || value.trim() === "") && newData.leaderboardEnabled) {
+                newData.leaderboardEnabled = false;
+            }
+            
+            return newData;
+        });
     };
 
     const handleUpdateProfile = async () => {
         if (!user || !userData) return;
+
+        // Validate nickname requirement for leaderboard participation
+        if (userData.role === "user" && formData.leaderboardEnabled && (!formData.nickname || formData.nickname.trim() === "")) {
+            toast.error("You must set a nickname to participate in the leaderboard.");
+            return;
+        }
 
         try {
             setUpdating(true);
@@ -95,8 +114,10 @@ export default function ProfilePage() {
                 updateData.phone = formData.phone;
                 updateData.photoURL = formData.photoURL;
             } else {
-                // Users can only update photoURL
+                // Users can update photoURL, nickname, and leaderboard settings
                 updateData.photoURL = formData.photoURL;
+                updateData.nickname = formData.nickname;
+                updateData.leaderboardEnabled = formData.leaderboardEnabled;
             }
 
             // Update Firestore document
@@ -255,6 +276,26 @@ export default function ProfilePage() {
                                             <p className="font-medium">{userData.username}</p>
                                         </div>
                                     )}
+
+                                    {userData.role === "user" && userData.nickname && (
+                                        <div className="space-y-1">
+                                            <p className="text-sm text-muted-foreground">Nickname (Leaderboard)</p>
+                                            <p className="font-medium">{userData.nickname}</p>
+                                        </div>
+                                    )}
+
+                                    {userData.role === "user" && (
+                                        <div className="space-y-1">
+                                            <p className="text-sm text-muted-foreground">Leaderboard Participation</p>
+                                            <p className="font-medium">
+                                                {userData.leaderboardEnabled !== false ? (
+                                                    <Badge variant="default" className="text-xs">Enabled</Badge>
+                                                ) : (
+                                                    <Badge variant="secondary" className="text-xs">Disabled</Badge>
+                                                )}
+                                            </p>
+                                        </div>
+                                    )}
                                 </CardContent>
                             </Card>
 
@@ -409,13 +450,69 @@ export default function ProfilePage() {
                                         </div>
                                     )}
                                 </div>
+
+                                {userData.role === "user" && (
+                                    <>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="nickname">Nickname (for Leaderboard) *</Label>
+                                            <Input
+                                                id="nickname"
+                                                name="nickname"
+                                                value={formData.nickname || ''}
+                                                onChange={handleInputChange}
+                                                placeholder="Enter your nickname"
+                                                maxLength={20}
+                                                className={formData.leaderboardEnabled && (!formData.nickname || formData.nickname.trim() === "") ? "border-red-500" : ""}
+                                            />
+                                            <p className="text-sm text-muted-foreground">
+                                                Your nickname will be displayed on the leaderboard instead of your real name.
+                                                {formData.leaderboardEnabled && (!formData.nickname || formData.nickname.trim() === "") && (
+                                                    <span className="text-red-500 block mt-1">Nickname is required for leaderboard participation.</span>
+                                                )}
+                                            </p>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label htmlFor="leaderboardEnabled">Leaderboard Participation</Label>
+                                            <div className="flex items-center space-x-2">
+                                                <input
+                                                    type="checkbox"
+                                                    id="leaderboardEnabled"
+                                                    name="leaderboardEnabled"
+                                                    checked={formData.leaderboardEnabled}
+                                                    onChange={(e) => {
+                                                        setFormData(prev => ({
+                                                            ...prev,
+                                                            leaderboardEnabled: e.target.checked
+                                                        }));
+                                                    }}
+                                                    className="rounded border-gray-300"
+                                                    disabled={!formData.nickname || formData.nickname.trim() === ""}
+                                                />
+                                                <Label htmlFor="leaderboardEnabled" className="text-sm font-normal">
+                                                    Participate in leaderboard rankings
+                                                </Label>
+                                            </div>
+                                            <p className="text-sm text-muted-foreground">
+                                                {!formData.nickname || formData.nickname.trim() === "" 
+                                                    ? "You must set a nickname first to participate in the leaderboard."
+                                                    : formData.leaderboardEnabled 
+                                                        ? "You will appear on the leaderboard with your nickname."
+                                                        : "You will not appear on the leaderboard."
+                                                }
+                                            </p>
+                                        </div>
+                                    </>
+                                )}
                             </CardContent>
                             <CardFooter className="flex justify-between">
                                 <Button variant="outline" onClick={() => {
                                     setFormData({
                                         displayName: userData.displayName || "",
                                         phone: userData.phone || "",
-                                        photoURL: userData.photoURL || ""
+                                        photoURL: userData.photoURL || "",
+                                        nickname: userData.nickname || "",
+                                        leaderboardEnabled: userData.leaderboardEnabled !== false
                                     });
                                 }}>
                                     Reset

@@ -93,6 +93,8 @@ export type User = {
     phone?: string;
     email: string;
     username?: string;
+    nickname?: string;
+    leaderboardEnabled?: boolean;
     role: "user" | "admin";
     status?: "inactive" | "active" | "warned" | "banned";
     metadata: Metadata

@@ -87,6 +87,27 @@ export async function getQuizLeaderboardSecure(
         Object.entries(userAttempts).forEach(([userId, attempts]) => {
             if (attempts.length === 0) return;
 
+            const user = usersMap.get(userId);
+            if (!user) return;
+
+            // For users with "user" role, check if they meet leaderboard criteria
+            if (user.role === "user") {
+                // Skip users without nicknames
+                if (!user.nickname || user.nickname.trim() === "") {
+                    return;
+                }
+                
+                // Skip users who have disabled leaderboard participation
+                if (user.leaderboardEnabled === false) {
+                    return;
+                }
+                
+                // Skip banned or disabled users
+                if (user.status === "banned" || user.status === "inactive") {
+                    return;
+                }
+            }
+
             totalUsers++;
             totalAttempts += attempts.length;
 
@@ -123,7 +144,7 @@ export async function getQuizLeaderboardSecure(
 
                 allAttempts.push({
                     id: userId,
-                    displayName: user.displayName,
+                    displayName: user.role === "user" ? (user.nickname || user.displayName) : user.displayName,
                     photoURL: user.photoURL,
                     email: user.email,
                     score: attempt.score || 0,

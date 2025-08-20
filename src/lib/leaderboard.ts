@@ -132,8 +132,25 @@ export async function getLeaderboardData(timeFilter: TimeFilter = TimeFilter.ALL
             const userId = user.id || user.uid || '';
             const quizResults = userReports[userId] || [];
 
-            // Only include users with quiz results
+            // Only include users with quiz results AND who meet leaderboard criteria
             if (quizResults && quizResults.length > 0) {
+                // For users with "user" role, check if they have nickname and leaderboard enabled
+                if (user.role === "user") {
+                    // Skip users without nicknames
+                    if (!user.nickname || user.nickname.trim() === "") {
+                        return;
+                    }
+                    
+                    // Skip users who have disabled leaderboard participation
+                    if (user.leaderboardEnabled === false) {
+                        return;
+                    }
+                    
+                    // Skip banned or disabled users
+                    if (user.status === "banned" || user.status === "inactive") {
+                        return;
+                    }
+                }
                 const totalUserQuizzes = quizResults.length;
 
                 // Calculate statistics - handle cases where percentageScore might be undefined
@@ -167,7 +184,7 @@ export async function getLeaderboardData(timeFilter: TimeFilter = TimeFilter.ALL
 
                 leaderboardData.push({
                     id: user.id || user.uid || '',
-                    displayName: user.displayName,
+                    displayName: user.role === "user" ? (user.nickname || user.displayName) : user.displayName,
                     photoURL: user.photoURL,
                     email: user.email,
                     totalQuizzes: totalUserQuizzes,
@@ -262,7 +279,7 @@ export async function getLeaderboardData(timeFilter: TimeFilter = TimeFilter.ALL
 
             const leaderboardEntry: LeaderboardEntry = {
                 id: userData.id || userData.uid || '',
-                displayName: userData.displayName,
+                displayName: userData.role === "user" ? (userData.nickname || userData.displayName) : userData.displayName,
                 photoURL: userData.photoURL,
                 email: userData.email,
                 totalQuizzes: userReports.length,
