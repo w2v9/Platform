@@ -1,22 +1,39 @@
 'use client';
+import React from "react";
 import QuizUI from "@/components/Quiz";
 import { Quiz, Question, OptionSet } from "@/data/quiz";
 import { useEffect, useState, use } from "react";
 import { getQuizById } from "@/lib/db_quiz";
 import { toast } from "sonner";
 import { Loader } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 function convertLegacyQuizFormat(quiz: any): Quiz {
-    if (!quiz) return quiz;
+    if (!quiz) {
+        throw new Error("Quiz data is null or undefined");
+    }
 
-    const questions = quiz.questions.map((question: any) => {
+    if (!quiz.questions || !Array.isArray(quiz.questions)) {
+        throw new Error("Quiz questions array is missing or invalid");
+    }
+
+    const questions = quiz.questions.map((question: any, index: number) => {
+        if (!question) {
+            throw new Error(`Question ${index + 1} is null or undefined`);
+        }
+
+        // Handle legacy format with direct options
         if (question.options && !question.optionSets) {
-            const correctOptions = question.options.filter((opt: any) => opt.isCorrect);
-            const correctIds = correctOptions.map((opt: any) => opt.id);
+            if (!Array.isArray(question.options)) {
+                throw new Error(`Question ${index + 1} has invalid options array`);
+            }
+
+            const correctOptions = question.options.filter((opt: any) => opt && opt.isCorrect);
+            const correctIds = correctOptions.map((opt: any) => opt.id).filter(Boolean);
 
             const optionSet = {
                 id: crypto.randomUUID(),
-                options: question.options,
+                options: question.options.filter(Boolean), // Remove any null/undefined options
                 answer: correctIds
             };
 
@@ -29,18 +46,23 @@ function convertLegacyQuizFormat(quiz: any): Quiz {
             };
         }
 
+        // Handle new format with optionSets
+        if (!question.optionSets || !Array.isArray(question.optionSets)) {
+            throw new Error(`Question ${index + 1} has invalid optionSets array`);
+        }
+
         return {
             ...question,
-            optionSets: question.optionSets || [],
+            optionSets: question.optionSets.filter(Boolean), // Remove any null/undefined optionSets
             activeSetIndex: question.activeSetIndex || 0
         };
     });
 
     return {
         ...quiz,
-        questions,
-        randomizeQuestions: quiz.randomizeQuestions || false,
-        randomizeOptions: quiz.randomizeOptions || false
+        questions: questions.filter(Boolean), // Remove any null/undefined questions
+        randomizeQuestions: Boolean(quiz.randomizeQuestions),
+        randomizeOptions: Boolean(quiz.randomizeOptions)
     };
 }
 
@@ -48,7 +70,31 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
     const unwrappedParams = use(params);
     const quizId = unwrappedParams.id;
     const [quizData, setQuizData] = useState<Quiz>();
-    const [isLoading, setIsLoading] = useState(true); const [error, setError] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    // Global error handler
+    useEffect(() => {
+        const handleGlobalError = (event: ErrorEvent) => {
+            console.error('Global error caught:', event.error);
+            setError(`Application error: ${event.error?.message || 'Unknown error occurred'}`);
+            toast.error('An unexpected error occurred. Please refresh the page.');
+        };
+
+        const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+            console.error('Unhandled promise rejection:', event.reason);
+            setError(`Promise error: ${event.reason?.message || 'Unknown promise error'}`);
+            toast.error('An unexpected error occurred. Please refresh the page.');
+        };
+
+        window.addEventListener('error', handleGlobalError);
+        window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+        return () => {
+            window.removeEventListener('error', handleGlobalError);
+            window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+        };
+    }, []);
 
     useEffect(() => {
         // Set page title
@@ -56,35 +102,62 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
     }, []);
 
     function prepareQuizForTaking(quiz: Quiz): Quiz {
-        if (!quiz) return quiz;
+        if (!quiz) {
+            throw new Error("Quiz data is null or undefined");
+        }
 
-        let preparedQuestions = [...quiz.questions];
+        if (!quiz.questions || !Array.isArray(quiz.questions)) {
+            throw new Error("Quiz questions array is missing or invalid");
+        }
+
+        let preparedQuestions = [...quiz.questions].filter(Boolean); // Remove any null questions
 
         if (quiz.randomizeQuestions) {
             preparedQuestions = shuffleArray(preparedQuestions);
         }
 
-        preparedQuestions = preparedQuestions.map(question => {
-            if (question.optionSets && question.optionSets.length > 1) {
-                const randomIndex = Math.floor(Math.random() * question.optionSets.length);
-                return {
-                    ...question,
-                    selectedSetIndex: randomIndex
-                };
+        preparedQuestions = preparedQuestions.map((question, index) => {
+            if (!question) {
+                throw new Error(`Question ${index + 1} is null or undefined`);
             }
+
+            if (!question.optionSets || !Array.isArray(question.optionSets)) {
+                throw new Error(`Question ${index + 1} has invalid optionSets`);
+            }
+
+            if (question.optionSets.length === 0) {
+                throw new Error(`Question ${index + 1} has no option sets`);
+            }
+
+            let selectedSetIndex = question.activeSetIndex || 0;
+
+            if (question.optionSets.length > 1) {
+                // Ensure selectedSetIndex is within bounds
+                selectedSetIndex = Math.min(selectedSetIndex, question.optionSets.length - 1);
+                selectedSetIndex = Math.max(selectedSetIndex, 0);
+            }
+
             return {
                 ...question,
-                selectedSetIndex: question.activeSetIndex || 0
+                selectedSetIndex
             };
         });
 
         if (quiz.randomizeOptions) {
             preparedQuestions = preparedQuestions.map(question => {
+                if (!question.optionSets) {
+                    return question;
+                }
+
                 const optionSets = question.optionSets.map((set, index) => {
+                    if (!set || !set.options) {
+                        return set;
+                    }
+
                     if (index === question.selectedSetIndex || index === question.activeSetIndex) {
                         return {
                             ...set,
-                            options: shuffleArray(set.options)
+                            options: shuffleArray(set.options.filter(Boolean)) // Remove null options
                         };
                     }
                     return set;
@@ -92,7 +165,7 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
 
                 return {
                     ...question,
-                    optionSets
+                    optionSets: optionSets.filter(Boolean) // Remove null optionSets
                 };
             });
         }
@@ -116,22 +189,56 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
         const fetchQuiz = async () => {
             try {
                 setIsLoading(true);
+                setError(null);
+                
+                if (!quizId) {
+                    throw new Error("Quiz ID is missing");
+                }
+
                 const quiz = await getQuizById(quizId);
 
-                if (quiz) {
-                    const convertedQuiz = convertLegacyQuizFormat(quiz);
-
-                    const preparedQuiz = prepareQuizForTaking(convertedQuiz);
-
-                    setQuizData(preparedQuiz);
-                } else {
-                    setError("Quiz not found");
-                    toast.error("Quiz not found");
+                if (!quiz) {
+                    throw new Error("Quiz not found");
                 }
+
+                // Validate quiz structure
+                if (!quiz.questions || !Array.isArray(quiz.questions)) {
+                    throw new Error("Invalid quiz structure: questions array is missing");
+                }
+
+                if (quiz.questions.length === 0) {
+                    throw new Error("Quiz has no questions");
+                }
+
+                // Validate each question
+                for (let i = 0; i < quiz.questions.length; i++) {
+                    const question = quiz.questions[i];
+                    if (!question.optionSets || !Array.isArray(question.optionSets)) {
+                        throw new Error(`Question ${i + 1} has invalid option sets`);
+                    }
+                    if (question.optionSets.length === 0) {
+                        throw new Error(`Question ${i + 1} has no option sets`);
+                    }
+                    for (let j = 0; j < question.optionSets.length; j++) {
+                        const optionSet = question.optionSets[j];
+                        if (!optionSet.options || !Array.isArray(optionSet.options)) {
+                            throw new Error(`Question ${i + 1}, Option Set ${j + 1} has invalid options`);
+                        }
+                        if (optionSet.options.length === 0) {
+                            throw new Error(`Question ${i + 1}, Option Set ${j + 1} has no options`);
+                        }
+                    }
+                }
+
+                const convertedQuiz = convertLegacyQuizFormat(quiz);
+                const preparedQuiz = prepareQuizForTaking(convertedQuiz);
+
+                setQuizData(preparedQuiz);
             } catch (error) {
                 console.error("Error fetching quiz:", error);
-                setError("Error loading quiz");
-                toast.error("Error fetching quiz");
+                const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+                setError(errorMessage);
+                toast.error(`Error loading quiz: ${errorMessage}`);
             } finally {
                 setIsLoading(false);
             }
@@ -225,7 +332,57 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
             onPaste={(e) => e.preventDefault()}
             onCut={(e) => e.preventDefault()}
         >
-            <QuizUI quizData={quizData} />
+            <ErrorBoundary fallback={<QuizErrorFallback />}>
+                <QuizUI quizData={quizData} />
+            </ErrorBoundary>
+        </div>
+    );
+}
+
+// Error Boundary Component
+class ErrorBoundary extends React.Component<
+    { children: React.ReactNode; fallback: React.ReactNode },
+    { hasError: boolean; error?: Error }
+> {
+    constructor(props: { children: React.ReactNode; fallback: React.ReactNode }) {
+        super(props);
+        this.state = { hasError: false };
+    }
+
+    static getDerivedStateFromError(error: Error) {
+        return { hasError: true, error };
+    }
+
+    componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+        console.error('Quiz Error Boundary caught an error:', error, errorInfo);
+        toast.error('Quiz component error. Please refresh the page.');
+    }
+
+    render() {
+        if (this.state.hasError) {
+            return this.props.fallback;
+        }
+
+        return this.props.children;
+    }
+}
+
+// Error Fallback Component
+function QuizErrorFallback() {
+    return (
+        <div className="flex flex-col items-center justify-center space-y-4 text-center p-8">
+            <div className="text-red-500 text-2xl mb-4">
+                Quiz Error
+            </div>
+            <div className="text-lg">
+                An error occurred while loading the quiz.
+            </div>
+            <Button 
+                onClick={() => window.location.reload()} 
+                variant="outline"
+            >
+                Refresh Page
+            </Button>
         </div>
     );
 }

@@ -98,23 +98,50 @@ interface FormQuestionData {
 type FormData = FormQuestionData[]
 
 export default function QuizUI({ quizData }: { quizData: Quiz }) {
+    // Validate quiz data
+    if (!quizData) {
+        throw new Error("Quiz data is required");
+    }
+
+    if (!quizData.questions || !Array.isArray(quizData.questions)) {
+        throw new Error("Quiz questions array is missing or invalid");
+    }
+
+    if (quizData.questions.length === 0) {
+        throw new Error("Quiz has no questions");
+    }
+
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [formData, setFormData] = useState<FormData>(() => {
-        return quizData.questions.map((question, index) => ({
-            index,
-            answers: [],
-            markedForReview: false,
-        }));
+        try {
+            return quizData.questions.map((question, index) => {
+                if (!question) {
+                    throw new Error(`Question ${index + 1} is null or undefined`);
+                }
+                return {
+                    index,
+                    answers: [],
+                    markedForReview: false,
+                };
+            });
+        } catch (error) {
+            console.error("Error initializing form data:", error);
+            throw error;
+        }
     });
     const { user } = useAuth();
 
-    const [timeRemaining, setTimeRemaining] = useState<number>(quizData.timeLimit * 60 || 1800);
+    const [timeRemaining, setTimeRemaining] = useState<number>(() => {
+        const timeLimit = quizData.timeLimit || 30; // Default to 30 minutes
+        return timeLimit * 60;
+    });
     const [isTimerExpired, setIsTimerExpired] = useState<boolean>(false);
     const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
     const [submittedReportId, setSubmittedReportId] = useState<string | null>(null);
     const router = useRouter();
 
-    const isDesktop = useMediaQuery("(min-width: 768px)"); const [animationDirection, setAnimationDirection] = useState<'next' | 'prev' | 'none'>('none');
+    const isDesktop = useMediaQuery("(min-width: 768px)");
+    const [animationDirection, setAnimationDirection] = useState<'next' | 'prev' | 'none'>('none');
     const [isAnimating, setIsAnimating] = useState(false);
 
     useEffect(() => {
@@ -122,22 +149,42 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
             setIsTimerExpired(true);
             return;
         }
+        
         const timer = setInterval(() => {
-            setTimeRemaining(prev => prev - 1);
-        }, 1000); return () => clearInterval(timer);
+            setTimeRemaining(prev => {
+                if (prev <= 0) {
+                    setIsTimerExpired(true);
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+        
+        return () => clearInterval(timer);
     }, [timeRemaining]);
 
     const handleNextQuestion = useCallback(() => {
-        if (currentQuestionIndex >= quizData.questions.length) return;
+        try {
+            if (currentQuestionIndex >= quizData.questions.length - 1) return;
 
-        setAnimationDirection('next');
-        setIsAnimating(true);
+            setAnimationDirection('next');
+            setIsAnimating(true);
 
-        // Delay the actual navigation to allow animation to play
-        setTimeout(() => {
-            setCurrentQuestionIndex(prev => prev + 1);
+            // Delay the actual navigation to allow animation to play
+            setTimeout(() => {
+                setCurrentQuestionIndex(prev => {
+                    const nextIndex = prev + 1;
+                    if (nextIndex >= quizData.questions.length) {
+                        return prev; // Don't go beyond the last question
+                    }
+                    return nextIndex;
+                });
+                setIsAnimating(false);
+            }, 400); // Match this with the animation duration
+        } catch (error) {
+            console.error("Error in handleNextQuestion:", error);
             setIsAnimating(false);
-        }, 400); // Match this with the animation duration
+        }
     }, [currentQuestionIndex, quizData.questions.length]);
 
     const handlePreviousQuestion = useCallback(() => {
