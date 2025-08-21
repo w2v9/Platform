@@ -14,6 +14,7 @@ import { getUserById } from '../db_user';
 interface AuthContextType {
     user: User | null;
     loading: boolean;
+    markSessionChecked: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,25 +26,17 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
+    const [sessionChecked, setSessionChecked] = useState(false);
 
     useEffect(() => {
         const unsubscribe = auth.onAuthStateChanged(async (user) => {
             setUser(user);
             
-            // Check if user has a valid session (for user role only)
             if (user) {
-                try {
-                    const userData = await getUserById(user.uid);
-                    
-                    // If user has "user" role and no current session, log them out
-                    if (userData && userData.role === "user" && !userData.metadata.currentSession) {
-                        console.log("User session terminated, logging out...");
-                        await auth.signOut();
-                        return;
-                    }
-                } catch (error) {
-                    console.error("Error checking user session:", error);
-                }
+                // Don't check session immediately - let login process complete
+                setSessionChecked(false);
+            } else {
+                setSessionChecked(false);
             }
             
             setLoading(false);
@@ -54,14 +47,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     // Periodic session check for logged-in users
     useEffect(() => {
-        if (!user) return;
+        if (!user || !sessionChecked) return;
 
         const checkSession = async () => {
             try {
                 const userData = await getUserById(user.uid);
                 
                 // If user has "user" role and no current session, log them out
-                if (userData && userData.role === "user" && !userData.metadata.currentSession) {
+                if (userData && userData.role === "user" && (!userData.metadata?.currentSession || userData.metadata.currentSession === null)) {
                     console.log("User session terminated during periodic check, logging out...");
                     await auth.signOut();
                 }
@@ -74,10 +67,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const interval = setInterval(checkSession, 30000);
 
         return () => clearInterval(interval);
-    }, [user]);
+    }, [user, sessionChecked]);
+
+    const markSessionChecked = () => {
+        setSessionChecked(true);
+    };
 
     return (
-        <AuthContext.Provider value={{ user, loading }}>
+        <AuthContext.Provider value={{ user, loading, markSessionChecked }}>
             {children}
         </AuthContext.Provider>
     );

@@ -27,7 +27,7 @@ const formSchema = z.object({
 
 export default function LoginPage() {
     const router = useRouter()
-    const { user } = useAuth()
+    const { user, markSessionChecked } = useAuth()
     const [isSubmitting, setIsSubmitting] = useState(false)
 
     // Set page title
@@ -68,6 +68,11 @@ export default function LoginPage() {
                         toast.warning(response.message);
                     }
                     toast.success("Login successful!");
+                    
+                    // Mark session as checked after successful login
+                    setTimeout(() => {
+                        markSessionChecked();
+                    }, 500);
                 }
             })
             .catch((error) => {
@@ -97,7 +102,11 @@ export default function LoginPage() {
             success: null,
             error: null,
         });
-    } return (
+    }
+
+
+
+    return (
         <section className="py-4 px-4 flex flex-col items-center justify-center min-h-[70vh]">
             <div className="w-full max-w-md mx-auto bg-card border rounded-lg shadow-sm p-4 sm:p-6 md:p-8">
                 <h1 className="text-2xl font-bold text-center mb-6">Login to AzoozGAT</h1>

@@ -123,6 +123,8 @@ export async function registerUser(data: User, password: string) {
             email,
             role: "user",
             status: "inactive",
+            nickname: "",
+            leaderboardEnabled: false,
             metadata: {
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
@@ -158,6 +160,8 @@ export async function loginUser(email: string, password: string) {
                 email: user.email || "",
                 role: "user",
                 status: "inactive",
+                nickname: "",
+                leaderboardEnabled: false,
                 metadata: {
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString(),
@@ -168,7 +172,14 @@ export async function loginUser(email: string, password: string) {
         }
 
         userDoc = await getDoc(userRef);
-        const userData = userDoc.data() as User;
+        let userData = userDoc.data() as User;
+        
+        // Ensure userData has all required fields for existing users
+        if (!userData.nickname) userData.nickname = "";
+        if (userData.leaderboardEnabled === undefined) userData.leaderboardEnabled = false;
+        if (!userData.metadata) userData.metadata = { createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+        if (!userData.metadata.sessions) userData.metadata.sessions = [];
+        // Don't set currentSession to undefined - it can be null/undefined naturally
 
         if (userData.status === "banned") {
             return {
@@ -190,6 +201,18 @@ export async function loginUser(email: string, password: string) {
             sessionId
         };
 
+        // Ensure metadata structure exists
+        if (!userData.metadata) {
+            userData.metadata = {
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                sessions: []
+            };
+        }
+        if (!userData.metadata.sessions) {
+            userData.metadata.sessions = [];
+        }
+
         const updateData: any = {
             status: "active",
             "metadata.lastLoginAt": new Date().toISOString(),
@@ -200,7 +223,7 @@ export async function loginUser(email: string, password: string) {
         let sessionTerminated = false;
         if (userData.role === "user") {
             // If there's an existing current session, end it and add to sessions history
-            if (userData.metadata.currentSession) {
+            if (userData.metadata?.currentSession && userData.metadata.currentSession !== null) {
                 const endedSession = {
                     ...userData.metadata.currentSession,
                     endedAt: new Date().toISOString()
@@ -223,7 +246,11 @@ export async function loginUser(email: string, password: string) {
             ];
         }
 
-        await updateDoc(userRef, updateData);
+        console.log("About to update user document with:", updateData);
+        
+        // Use setDoc with merge to ensure all fields are properly set
+        await setDoc(userRef, updateData, { merge: true });
+        console.log("User document updated successfully");
 
         const updatedUserData = await getUserById(user.uid);
 
@@ -280,7 +307,7 @@ export async function logoutUser() {
             };
 
             // For users with "user" role, end the current session
-            if (userData.role === "user" && userData.metadata.currentSession) {
+            if (userData.role === "user" && userData.metadata?.currentSession && userData.metadata.currentSession !== null) {
                 const endedSession = {
                     ...userData.metadata.currentSession,
                     endedAt: new Date().toISOString()
@@ -293,7 +320,7 @@ export async function logoutUser() {
                 updateData["metadata.currentSession"] = null;
             }
 
-            await updateDoc(userRef, updateData);
+            await setDoc(userRef, updateData, { merge: true });
         }
     }
 
@@ -339,7 +366,7 @@ export async function forceLogoutUser(userId: string): Promise<void> {
                 endedAt: new Date().toISOString()
             };
             
-            await updateDoc(userRef, {
+            await setDoc(userRef, {
                 status: "inactive",
                 "metadata.currentSession": null,
                 "metadata.sessions": [
@@ -347,7 +374,7 @@ export async function forceLogoutUser(userId: string): Promise<void> {
                     endedSession
                 ],
                 "metadata.updatedAt": new Date().toISOString()
-            });
+            }, { merge: true });
         }
     } catch (error) {
         console.error("Error forcing logout:", error);
@@ -386,6 +413,104 @@ export async function getCurrentUser(): Promise<User | null> {
             }
         }, reject);
     });
+}
+
+// Function to migrate existing user data to include new fields
+async function migrateUserData(userData: any): Promise<any> {
+    const migratedData: any = { ...userData };
+    
+    // Add missing fields with default values
+    if (!migratedData.nickname) {
+        migratedData.nickname = "";
+    }
+    
+    if (migratedData.leaderboardEnabled === undefined) {
+        migratedData.leaderboardEnabled = false;
+    }
+    
+    // Ensure metadata structure exists
+    if (!migratedData.metadata) {
+        migratedData.metadata = {
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+        };
+    }
+    
+    // Ensure sessions array exists
+    if (!migratedData.metadata.sessions) {
+        migratedData.metadata.sessions = [];
+    }
+    
+    // Ensure currentSession field exists (but keep it null for existing users)
+    if (migratedData.metadata.currentSession === undefined) {
+        migratedData.metadata.currentSession = null;
+    }
+    
+    return migratedData;
+}
+
+// One-time migration function to update all existing users
+export async function migrateAllUsers(): Promise<void> {
+    try {
+        console.log("Starting migration of all users...");
+        
+        const usersRef = collection(db, "users");
+        const usersSnapshot = await getDocs(usersRef);
+        
+        let migratedCount = 0;
+        let errorCount = 0;
+        
+        // Process users in batches to avoid memory issues
+        const batchSize = 10;
+        const allDocs = usersSnapshot.docs;
+        
+        for (let i = 0; i < allDocs.length; i += batchSize) {
+            const batch = allDocs.slice(i, i + batchSize);
+            
+            console.log(`Processing batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(allDocs.length/batchSize)}`);
+            
+            // Process batch in parallel with Promise.all
+            const batchPromises = batch.map(async (userDoc) => {
+                try {
+                    const userData = userDoc.data();
+                    
+                                    // Check if user needs migration
+                const needsMigration = 
+                    !userData.nickname || 
+                    userData.leaderboardEnabled === undefined ||
+                    !userData.metadata?.sessions;
+                    
+                    if (needsMigration) {
+                        const updateData: any = {};
+                        
+                        if (!userData.nickname) updateData.nickname = "";
+                        if (userData.leaderboardEnabled === undefined) updateData.leaderboardEnabled = false;
+                        if (!userData.metadata?.sessions) updateData["metadata.sessions"] = [];
+                        
+                        updateData["metadata.updatedAt"] = new Date().toISOString();
+                        
+                        await setDoc(doc(db, "users", userDoc.id), updateData, { merge: true });
+                        migratedCount++;
+                        console.log(`Migrated user: ${userData.email || userDoc.id}`);
+                    }
+                } catch (error) {
+                    console.error(`Error migrating user ${userDoc.id}:`, error);
+                    errorCount++;
+                }
+            });
+            
+            // Wait for batch to complete before processing next batch
+            await Promise.all(batchPromises);
+            
+            // Small delay between batches to prevent overwhelming the system
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+        console.log(`Migration complete. Migrated: ${migratedCount}, Errors: ${errorCount}`);
+    } catch (error) {
+        console.error("Migration failed:", error);
+        throw error;
+    }
 }
 
 
