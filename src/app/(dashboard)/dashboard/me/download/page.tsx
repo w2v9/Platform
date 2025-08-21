@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Download, FileText, AlertCircle, RefreshCw } from 'lucide-react';
+import { Download, FileText, AlertCircle, RefreshCw, Info, Smartphone } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/lib/context/authContext';
 import { getUserById } from '@/lib/db_user';
@@ -29,9 +29,18 @@ export default function DownloadPage() {
     const [error, setError] = useState<string | null>(null);
     const [downloadingFiles, setDownloadingFiles] = useState<Set<string>>(new Set());
     const [userData, setUserData] = useState<any>(null);
+    const [isSamsungBrowser, setIsSamsungBrowser] = useState(false);
+    const [showFileLocationHelp, setShowFileLocationHelp] = useState(false);
 
     useEffect(() => {
         document.title = 'PDF File Download Center - AzoozGAT Platform';
+        
+        // Detect Samsung browser
+        const userAgent = navigator.userAgent.toLowerCase();
+        const isSamsung = userAgent.includes('samsung') || 
+                         userAgent.includes('samsungbrowser') || 
+                         (userAgent.includes('android') && userAgent.includes('samsung'));
+        setIsSamsungBrowser(isSamsung);
     }, []);
 
 
@@ -119,6 +128,14 @@ export default function DownloadPage() {
             window.URL.revokeObjectURL(url);
 
             toast.success(`Downloaded ${filename} successfully with security watermark`);
+            
+            // Show file location help for Samsung browser users
+            if (isSamsungBrowser) {
+                setShowFileLocationHelp(true);
+                setTimeout(() => {
+                    setShowFileLocationHelp(false);
+                }, 10000); // Hide after 10 seconds
+            }
         } catch (err) {
             console.error('Download error:', err);
             toast.error(`Failed to download ${filename}`);
@@ -224,15 +241,27 @@ export default function DownloadPage() {
                             Download available PDF documents and resources
                         </p>
                     </div>
-                    <Button
-                        onClick={fetchPDFs}
-                        variant="outline"
-                        size="sm"
-                        disabled={loading}
-                    >
-                        <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                        Refresh
-                    </Button>
+                    <div className="flex gap-2">
+                        {isSamsungBrowser && (
+                            <Button
+                                onClick={() => setShowFileLocationHelp(true)}
+                                variant="outline"
+                                size="sm"
+                            >
+                                <Smartphone className="h-4 w-4 mr-2" />
+                                Samsung Help
+                            </Button>
+                        )}
+                        <Button
+                            onClick={fetchPDFs}
+                            variant="outline"
+                            size="sm"
+                            disabled={loading}
+                        >
+                            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                            Refresh
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Security Notice */}
@@ -244,6 +273,67 @@ export default function DownloadPage() {
                         <strong> Administrators can verify and trace any PDF back to its original downloader.</strong>
                     </AlertDescription>
                 </Alert>
+
+                {/* Samsung Browser File Location Help */}
+                {isSamsungBrowser && (
+                    <Alert className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/20">
+                        <Smartphone className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        <AlertDescription className="text-blue-800 dark:text-blue-200">
+                            <strong>Samsung Browser Users:</strong> After downloading, you may need to check your device&apos;s 
+                            <strong> Downloads folder</strong> or <strong>My Files app</strong> to locate the PDF file. 
+                            Samsung browser sometimes doesn&apos;t show downloaded files immediately in the browser&apos;s download manager.
+                        </AlertDescription>
+                    </Alert>
+                )}
+
+                {/* File Location Help (shown after download) */}
+                {showFileLocationHelp && (
+                    <div className="space-y-3">
+                        <Alert className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/20 animate-pulse">
+                            <Info className="h-4 w-4 text-green-600 dark:text-green-400" />
+                            <AlertDescription className="text-green-800 dark:text-green-200">
+                                <strong>File Downloaded Successfully!</strong> To find your file:
+                                <ul className="mt-2 ml-4 list-disc space-y-1">
+                                    <li>Open <strong>My Files</strong> app on your device</li>
+                                    <li>Navigate to <strong>Downloads</strong> folder</li>
+                                    <li>Look for the file with today&apos;s date</li>
+                                    <li>Or check <strong>Recent Files</strong> in My Files</li>
+                                </ul>
+                            </AlertDescription>
+                        </Alert>
+                        
+                        <div className="flex gap-2">
+                            <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => {
+                                    // Try to open My Files app or Downloads folder
+                                    if (navigator.share) {
+                                        navigator.share({
+                                            title: 'Find Downloaded PDF',
+                                            text: 'Your PDF has been downloaded. Check your Downloads folder or My Files app.',
+                                            url: window.location.href
+                                        });
+                                    } else {
+                                        // Fallback: show instructions
+                                        toast.info('Open My Files app → Downloads folder to find your file');
+                                    }
+                                }}
+                                className="flex-1"
+                            >
+                                <Smartphone className="h-4 w-4 mr-2" />
+                                Find My Files
+                            </Button>
+                            <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => setShowFileLocationHelp(false)}
+                            >
+                                Got it
+                            </Button>
+                        </div>
+                    </div>
+                )}
 
                 {error && (
                     <Alert variant="destructive">
