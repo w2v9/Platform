@@ -27,7 +27,7 @@ const formSchema = z.object({
 
 export default function LoginPage() {
     const router = useRouter()
-    const { user, markSessionChecked } = useAuth()
+    const { user, markSessionChecked, handleError } = useAuth()
     const [isSubmitting, setIsSubmitting] = useState(false)
 
     // Set page title
@@ -76,21 +76,27 @@ export default function LoginPage() {
                 }
             })
             .catch((error) => {
-                switch (error.code) {
-                    case 'auth/user-not-found':
-                        toast.error('No user found with this email.')
-                        break;
-                    case 'auth/wrong-password':
-                        toast.error('Incorrect password. Please try again.')
-                        break;
-                    case 'auth/invalid-email':
-                        toast.error('Invalid email address format.')
-                        break;
-                    case 'auth/too-many-requests':
-                        toast.error('Too many requests. Please try again later.')
-                        break;
-                    default:
-                        toast.error("Sign-in error: " + error.message);
+                // Check if it's a Firebase Auth error that we can handle gracefully
+                if (error.code && ['auth/user-not-found', 'auth/wrong-password', 'auth/invalid-email', 'auth/too-many-requests'].includes(error.code)) {
+                    switch (error.code) {
+                        case 'auth/user-not-found':
+                            toast.error('No user found with this email.')
+                            break;
+                        case 'auth/wrong-password':
+                            toast.error('Incorrect password. Please try again.')
+                            break;
+                        case 'auth/invalid-email':
+                            toast.error('Invalid email address format.')
+                            break;
+                        case 'auth/too-many-requests':
+                            toast.error('Too many requests. Please try again later.')
+                            break;
+                        default:
+                            toast.error("Sign-in error: " + error.message);
+                    }
+                } else {
+                    // Use the comprehensive error handler for other errors
+                    handleError(error, "Login Process");
                 }
             })
             .finally(() => {

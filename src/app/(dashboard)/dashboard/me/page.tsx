@@ -29,11 +29,12 @@ const statusColors: UserStatusColor = {
     active: "bg-green-500",
     inactive: "bg-gray-500",
     warned: "bg-yellow-500",
-    banned: "bg-red-500"
+    banned: "bg-red-500",
+    pending_setup: "bg-orange-500"
 };
 
 export default function ProfilePage() {
-    const { user } = useAuth();
+    const { user, handleError } = useAuth();
     const router = useRouter();
     const [userData, setUserData] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
@@ -65,7 +66,7 @@ export default function ProfilePage() {
                 });
             } catch (error) {
                 console.error("Error fetching user data:", error);
-                toast.error("Failed to load profile data");
+                handleError(error, "Profile Data Fetch");
             } finally {
                 setLoading(false);
             }
@@ -144,7 +145,7 @@ export default function ProfilePage() {
             toast.success("Profile updated successfully");
         } catch (error) {
             console.error("Error updating profile:", error);
-            toast.error("Failed to update profile");
+            handleError(error, "Profile Update");
         } finally {
             setUpdating(false);
         }

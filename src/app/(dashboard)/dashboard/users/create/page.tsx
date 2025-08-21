@@ -73,7 +73,7 @@ type FormValues = z.infer<typeof userSchema>;
 
 export default function CreateUserPage() {
     const router = useRouter();
-    const { user } = useAuth();
+    const { user, handleError } = useAuth();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
@@ -135,10 +135,15 @@ export default function CreateUserPage() {
             router.push("/dashboard/users");
         } catch (error) {
             console.error("Error creating user:", error);
-            if (error instanceof Error) {
+            
+            // Check if it's a specific error we can handle gracefully
+            if (error.code === 'permission-denied') {
+                toast.error("You don't have permission to create users.");
+            } else if (error instanceof Error) {
                 toast.error(error.message);
             } else {
-                toast.error("An unknown error occurred");
+                // Use the comprehensive error handler for other errors
+                handleError(error, "User Creation");
             }
         } finally {
             setIsSubmitting(false);

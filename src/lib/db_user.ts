@@ -30,7 +30,7 @@ function generateSessionId(): string {
 }
 
 export type UserRole = "user" | "admin";
-export type UserStatus = "inactive" | "active" | "warned" | "banned";
+export type UserStatus = "inactive" | "active" | "warned" | "banned" | "pending_setup";
 export type UserStatusColor = {
     [key in UserStatus]: string;
 };
@@ -352,6 +352,18 @@ export async function loginUser(email: string, password: string) {
 
     } catch (error) {
         console.error("Error logging in:", error);
+        
+        // Log error with user details for debugging
+        const currentUser = auth.currentUser;
+        if (currentUser) {
+            console.error("Error occurred for user:", {
+                uid: currentUser.uid,
+                email: currentUser.email,
+                displayName: currentUser.displayName,
+                error: error
+            });
+        }
+        
         throw error;
     }
 }
