@@ -74,9 +74,9 @@ export function AppSidebar({ items, user }: { items: SidebarItem[], user: User |
             <SidebarFooter>
                 <SidebarGroup>
                     <SidebarGroupLabel asChild>
-                        <div>
-                            <span>{user?.displayName}</span>
-                            <Label className="ml-4 text-xs text-muted-foreground">
+                        <div className="flex flex-col space-y-1">
+                            <span className="font-medium">{user?.displayName}</span>
+                            <Label className="text-xs text-muted-foreground">
                                 {user?.email}
                             </Label>
                         </div>

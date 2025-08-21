@@ -445,7 +445,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                     <Button variant="outline" onClick={() => window.history.back()}>
                         Back to Results
                     </Button>
-                    <Button onClick={() => window.location.href = `/quiz/${reportData.quizId}`}>
+                                                <Button onClick={() => window.location.href = `/quiz/${reportData.quizId}/start`}>
                         Try Again
                     </Button>
                 </div>

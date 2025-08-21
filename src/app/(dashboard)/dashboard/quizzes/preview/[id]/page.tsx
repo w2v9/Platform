@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/resizable"
 
 import { Progress } from "@/components/ui/progress"
-import { Clock, FlagIcon, MoveLeft, MoveRight } from "lucide-react";
+import { Clock, FlagIcon, MoveLeft, MoveRight, X } from "lucide-react";
 import { useState, useEffect, useCallback, use } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Toggle } from "@/components/ui/toggle";
@@ -20,6 +20,7 @@ import { useMediaQuery } from "@/components/hooks/useMediaQuary";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useRouter } from "next/navigation";
 
 
 function QustionCard2({ index, setCurentIndex, markedForReview, answers, isHardMode }: {
@@ -68,6 +69,7 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
     const [timeRemaining, setTimeRemaining] = useState<number>(0);
     const [isTimerExpired, setIsTimerExpired] = useState<boolean>(false);
     const isDesktop = useMediaQuery("(min-width: 768px)");
+    const router = useRouter();
 
     const formatTime = (seconds: number): string => {
         if (seconds <= 0) return "00:00";
@@ -287,6 +289,18 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
                         <Image src={'/images/logo.png'} alt={'logo'} width={50} height={50} className={'mr-2'} />
                         <h1 className="md:text-2xl lg:text-2xl font-bold">{quizData.title}</h1>
                     </div>
+
+                    {/* Mobile Close Button */}
+                    {!isDesktop && (
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => router.push('/dashboard/quizzes')}
+                            className="ml-2"
+                        >
+                            <X className="h-4 w-4" />
+                        </Button>
+                    )}
 
                     <div className="flex flex-row items-center justify-end gap-4">
                         <div>

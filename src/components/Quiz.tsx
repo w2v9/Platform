@@ -7,7 +7,7 @@ import '../app/quiz-animations.css'
 // Resizable panel imports removed
 
 import { Progress } from "@/components/ui/progress"
-import { Clock, FlagIcon, MoveLeft, MoveRight, Check, ListTodo, Trophy, Info } from "lucide-react";
+import { Clock, FlagIcon, MoveLeft, MoveRight, Check, ListTodo, Trophy, Info, X } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { ScrollArea } from "./ui/scroll-area";
 import { Toggle } from "@/components/ui/toggle";
@@ -455,6 +455,18 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
                         <Image src={'/images/logo.png'} alt={'logo'} width={50} height={50} className={'mr-2'} />
                         <h1 className="md:text-2xl lg:text-2xl font-bold">{quizData.title}</h1>
                     </div>
+
+                    {/* Mobile Close Button */}
+                    {!isDesktop && (
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => router.push('/dashboard/me/quizzes')}
+                            className="ml-2"
+                        >
+                            <X className="h-4 w-4" />
+                        </Button>
+                    )}
 
                     <div className="flex flex-row items-center justify-end gap-4">
                         <div>

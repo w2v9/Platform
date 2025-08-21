@@ -155,7 +155,7 @@ export default function Quizzes() {
                 return (
                     <Button variant="primary"
                         className="flex items-center gap-2"
-                        onClick={() => router.push(`/quiz/${quiz.id}`)}
+                                                        onClick={() => router.push(`/quiz/${quiz.id}/start`)}
                     >
                         <span className="sr-only">Start quiz</span>
                         <PlayIcon className="h-4 w-4" />
