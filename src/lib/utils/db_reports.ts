@@ -44,7 +44,7 @@ async function isUserAdmin(): Promise<boolean> {
   return userData?.role === "admin";
 }
 
-export async function getAllReports(toFetch: number): Promise<QuizReports> {
+export async function getAllReports(toFetch?: number): Promise<QuizReports> {
   try {
     const isAdmin = await isUserAdmin();
     if (!isAdmin) {
@@ -53,7 +53,7 @@ export async function getAllReports(toFetch: number): Promise<QuizReports> {
     }
 
     const reportsRef = collection(db, "reports");
-    const reportsQuery = query(reportsRef, limit(toFetch));
+    const reportsQuery = toFetch ? query(reportsRef, limit(toFetch)) : query(reportsRef);
 
     const querySnapshot = await getDocs(reportsQuery);
     const reports: QuizReports = [];
