@@ -1,5 +1,6 @@
 'use client'
 import { LogOut } from "lucide-react"
+import { useState, useEffect } from "react"
 import {
     Sidebar,
     SidebarContent,
@@ -25,6 +26,39 @@ export type SidebarItem = {
 }
 
 export function AppSidebar({ items, user }: { items: SidebarItem[], user: User | null }) {
+    const [unreadAnnouncements, setUnreadAnnouncements] = useState(0);
+    const [userRole, setUserRole] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (user?.uid) {
+            fetchUserRole();
+        }
+    }, [user?.uid]);
+
+    const fetchUserRole = async () => {
+        try {
+            const { getUserById } = await import('@/lib/db_user');
+            const userData = await getUserById(user!.uid);
+            setUserRole(userData?.role || null);
+            
+            // Only fetch announcements for regular users, not admins
+            if (userData?.role !== 'admin') {
+                fetchUnreadAnnouncements();
+            }
+        } catch (error) {
+            console.error('Error fetching user role:', error);
+        }
+    };
+
+    const fetchUnreadAnnouncements = async () => {
+        try {
+            const { getUnreadAnnouncements } = await import('@/lib/db_announcement');
+            const announcements = await getUnreadAnnouncements(user!.uid);
+            setUnreadAnnouncements(announcements.length);
+        } catch (error) {
+            console.error('Error fetching unread announcements:', error);
+        }
+    };
     return (
         <Sidebar collapsible="icon">
             <SidebarContent>
@@ -60,9 +94,14 @@ export function AppSidebar({ items, user }: { items: SidebarItem[], user: User |
                             {items.map((item, index) => (
                                 <SidebarMenuItem key={item.title}>
                                     <SidebarMenuButton asChild>
-                                        <a href={item.url}>
+                                        <a href={item.url} className="relative">
                                             <item.icon />
                                             <span>{item.title}</span>
+                                            {item.title === "Announcements" && userRole !== 'admin' && unreadAnnouncements > 0 && (
+                                                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-semibold rounded-full h-6 w-6 flex items-center justify-center shadow-lg border-2 border-white animate-pulse">
+                                                    {unreadAnnouncements > 99 ? '99+' : unreadAnnouncements}
+                                                </span>
+                                            )}
                                         </a>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>

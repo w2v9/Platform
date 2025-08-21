@@ -526,69 +526,7 @@ async function migrateUserData(userData: any): Promise<any> {
     return migratedData;
 }
 
-// One-time migration function to update all existing users
-export async function migrateAllUsers(): Promise<void> {
-    try {
-        console.log("Starting migration of all users...");
-        
-        const usersRef = collection(db, "users");
-        const usersSnapshot = await getDocs(usersRef);
-        
-        let migratedCount = 0;
-        let errorCount = 0;
-        
-        // Process users in batches to avoid memory issues
-        const batchSize = 10;
-        const allDocs = usersSnapshot.docs;
-        
-        for (let i = 0; i < allDocs.length; i += batchSize) {
-            const batch = allDocs.slice(i, i + batchSize);
-            
-            console.log(`Processing batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(allDocs.length/batchSize)}`);
-            
-            // Process batch in parallel with Promise.all
-            const batchPromises = batch.map(async (userDoc) => {
-                try {
-                    const userData = userDoc.data();
-                    
-                                    // Check if user needs migration
-                const needsMigration = 
-                    !userData.nickname || 
-                    userData.leaderboardEnabled === undefined ||
-                    !userData.metadata?.sessions;
-                    
-                    if (needsMigration) {
-                        const updateData: any = {};
-                        
-                        if (!userData.nickname) updateData.nickname = "";
-                        if (userData.leaderboardEnabled === undefined) updateData.leaderboardEnabled = false;
-                        if (!userData.metadata?.sessions) updateData["metadata.sessions"] = [];
-                        
-                        updateData["metadata.updatedAt"] = new Date().toISOString();
-                        
-                        await setDoc(doc(db, "users", userDoc.id), updateData, { merge: true });
-                        migratedCount++;
-                        console.log(`Migrated user: ${userData.email || userDoc.id}`);
-                    }
-                } catch (error) {
-                    console.error(`Error migrating user ${userDoc.id}:`, error);
-                    errorCount++;
-                }
-            });
-            
-            // Wait for batch to complete before processing next batch
-            await Promise.all(batchPromises);
-            
-            // Small delay between batches to prevent overwhelming the system
-            await new Promise(resolve => setTimeout(resolve, 100));
-        }
-        
-        console.log(`Migration complete. Migrated: ${migratedCount}, Errors: ${errorCount}`);
-    } catch (error) {
-        console.error("Migration failed:", error);
-        throw error;
-    }
-}
+
 
 
 export async function grantQuizAccess(userId: string, quizId: string, expiresAt?: Date) {

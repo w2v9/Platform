@@ -9,10 +9,11 @@ import { AuthProvider, useAuth } from "@/lib/context/authContext";
 import { Toaster } from "@/components/ui/sonner";
 import { useRouter, usePathname } from "next/navigation";
 import { getUserById, UserRole } from "@/lib/db_user";
-import { FileUser, Home, Inbox, ScrollText, Users, AlertTriangle, Loader2, FileDown, Trophy, BadgeCheck, Logs } from "lucide-react";
+import { FileUser, Home, Inbox, ScrollText, Users, AlertTriangle, Loader2, FileDown, Trophy, BadgeCheck, Logs, Megaphone } from "lucide-react";
 import { SidebarItem } from "@/components/app-sidebar";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { auth } from "@/lib/config/firebase-config";
+import AnnouncementBanner from "@/components/AnnouncementBanner";
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -57,6 +58,7 @@ const routes: RouteDef[] = [
     { path: '/dashboard/users/edit', type: 'admin' },
     { path: '/dashboard/users/edit/:id', type: 'admin' },
     { path: '/dashboard/leaderboard', type: 'admin' },
+    { path: '/dashboard/admin/announcements', type: 'admin' },
     { path: '/dashboard/logs', type: 'admin' },
     { path: '/dashboard/download-logs', type: 'admin' },
 ];
@@ -110,6 +112,11 @@ const getNavigationItems = (role: UserRole | undefined): SidebarItem[] => {
             title: "Leaderboard",
             url: "/dashboard/leaderboard",
             icon: Trophy,
+        },
+        {
+            title: "Announcements",
+            url: "/dashboard/admin/announcements",
+            icon: Megaphone,
         },
         {
             title: "Verify PDF",
@@ -217,6 +224,7 @@ function RouteProtection({ children }: { children: React.ReactNode }) {
             <AppSidebar items={getNavigationItems(userData?.role)} user={user} />
             <Toaster />
             <main className="w-full flex-1 overflow-auto bg-background">
+                <AnnouncementBanner className="p-4" />
                 {children}
             </main>
         </SidebarProvider>

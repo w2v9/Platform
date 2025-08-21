@@ -19,7 +19,7 @@ import { getAllReports, type QuizReport } from "@/lib/utils/db_reports"
 import { collection, getDocs, query, orderBy, limit } from "firebase/firestore"
 import { useEffect, useState } from "react"
 import type { Log } from "@/lib/db_logs"
-import { checkActiveSession, forceLogoutUser, migrateAllUsers } from "@/lib/db_user"
+import { checkActiveSession, forceLogoutUser } from "@/lib/db_user"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Activity,
@@ -59,7 +59,6 @@ export default function Page() {
   const [logs, setLogs] = useState<Log[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedLog, setSelectedLog] = useState<Log | null>(null);
-  const [migrating, setMigrating] = useState(false);
 
   useEffect(() => {
     // Set page title
@@ -102,20 +101,7 @@ export default function Page() {
     fetchData();
   }, []);
 
-  const handleMigration = async () => {
-    try {
-      setMigrating(true);
-      await migrateAllUsers();
-      alert('Migration completed successfully! All users have been updated with new fields.');
-      // Refresh the data
-      window.location.reload();
-    } catch (error) {
-      console.error('Migration failed:', error);
-      alert('Migration failed. Check console for details.');
-    } finally {
-      setMigrating(false);
-    }
-  };
+
 
   const totalUsers = users.length;
   const totalQuizzes = quizzes.length;
@@ -201,14 +187,7 @@ export default function Page() {
               <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
               <p className="text-muted-foreground">Overview of your platform&apos;s performance and activity.</p>
             </div>
-            <Button 
-              onClick={handleMigration} 
-              disabled={migrating}
-              variant="outline"
-              className="bg-yellow-50 border-yellow-200 text-yellow-800 hover:bg-yellow-100"
-            >
-              {migrating ? "Migrating Users..." : "Migrate All Users"}
-            </Button>
+
           </div>
 
           {/* Key Metrics Section */}

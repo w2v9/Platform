@@ -54,6 +54,29 @@ service cloud.firestore {
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
       allow update, delete: if false; // Reports should be immutable
     }
+
+    match /announcements/{announcementId} {
+      // All authenticated users can read active announcements
+      allow read: if isAuthenticated() && resource.data.isActive == true;
+      
+      // Allow listing announcements
+      allow list: if isAuthenticated();
+      
+      // Only admins can create/update/delete announcements
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /userAnnouncements/{userAnnouncementId} {
+      // Allow all authenticated users to read userAnnouncements for filtering
+      allow read: if isAuthenticated();
+      
+      // Users can create their own announcement interactions
+      allow create: if isAuthenticated() && 
+                   request.resource.data.userId == request.auth.uid;
+      
+      // Only admins can update/delete
+      allow update, delete: if isAdmin();
+    }
     
     //logs collection - only admin access
     match /logs/{logId} {
