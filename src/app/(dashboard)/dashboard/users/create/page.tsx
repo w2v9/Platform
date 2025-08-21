@@ -137,7 +137,7 @@ export default function CreateUserPage() {
             console.error("Error creating user:", error);
             
             // Check if it's a specific error we can handle gracefully
-            if (error.code === 'permission-denied') {
+            if (error && typeof error === 'object' && 'code' in error && error.code === 'permission-denied') {
                 toast.error("You don't have permission to create users.");
             } else if (error instanceof Error) {
                 toast.error(error.message);

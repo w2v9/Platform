@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { FileDown, FileText, Info, RefreshCw, Search, Eye, Calendar, User, FileType } from "lucide-react";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
@@ -43,6 +43,24 @@ export default function DownloadLogsPage() {
         document.title = "Download Logs - AzoozGAT Platform";
     }, []);
 
+    const filterLogs = useCallback(() => {
+        if (!searchTerm.trim()) {
+            setFilteredLogs(logs);
+            return;
+        }
+
+        const term = searchTerm.toLowerCase();
+        const filtered = logs.filter(log =>
+            log.fileName.toLowerCase().includes(term) ||
+            log.userEmail.toLowerCase().includes(term) ||
+            log.userName.toLowerCase().includes(term) ||
+            log.userId.toLowerCase().includes(term) ||
+            log.ipAddress.toLowerCase().includes(term)
+        );
+
+        setFilteredLogs(filtered);
+    }, [logs, searchTerm]);
+
     useEffect(() => {
         fetchLogs();
     }, []);
@@ -51,7 +69,7 @@ export default function DownloadLogsPage() {
         if (logs.length > 0) {
             filterLogs();
         }
-    }, [logs, searchTerm]);
+    }, [logs, searchTerm, filterLogs]);
 
     const fetchLogs = async () => {
         try {
@@ -85,23 +103,7 @@ export default function DownloadLogsPage() {
         }
     };
 
-    const filterLogs = () => {
-        if (!searchTerm.trim()) {
-            setFilteredLogs(logs);
-            return;
-        }
 
-        const term = searchTerm.toLowerCase();
-        const filtered = logs.filter(log =>
-            log.fileName.toLowerCase().includes(term) ||
-            log.userEmail.toLowerCase().includes(term) ||
-            log.userName.toLowerCase().includes(term) ||
-            log.userId.toLowerCase().includes(term) ||
-            log.ipAddress.toLowerCase().includes(term)
-        );
-
-        setFilteredLogs(filtered);
-    };
 
     const handleViewDetails = (log: LogEntry) => {
         setSelectedLog(log);

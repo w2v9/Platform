@@ -97,6 +97,30 @@ export default function AdminLeaderboardPage() {
         }
     };
 
+    const filterAndSortLeaderboard = useCallback(() => {
+        const filtered = leaderboard.filter(entry =>
+            entry.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            entry.email.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+
+        switch (sortBy) {
+            case 'rank':
+                filtered.sort((a, b) => a.rank - b.rank);
+                break;
+            case 'name':
+                filtered.sort((a, b) => a.displayName.localeCompare(b.displayName));
+                break;
+            case 'score':
+                filtered.sort((a, b) => b.averageScore - a.averageScore);
+                break;
+            case 'quizzes':
+                filtered.sort((a, b) => b.totalQuizzes - a.totalQuizzes);
+                break;
+        }
+
+        setFilteredLeaderboard(filtered);
+    }, [leaderboard, searchTerm, sortBy]);
+
     const exportLeaderboard = () => {
         const csvContent = [
             ['Rank', 'Name', 'Email', 'Average Score', 'Best Score', 'Total Quizzes', 'Total Score', 'Avg Completion Time', 'Badges', 'Last Quiz Date'].join(','),

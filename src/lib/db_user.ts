@@ -237,7 +237,7 @@ export async function loginUser(email: string, password: string) {
         }
 
         userDoc = await getDoc(userRef);
-        let userData = userDoc.data() as User;
+        const userData = userDoc.data() as User;
         
         // Ensure userData has all required fields for existing users
         if (!userData.nickname) userData.nickname = "";

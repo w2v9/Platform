@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/lib/context/authContext";
 import { User, getUserById, UserStatusColor } from "@/lib/db_user";
 import { useRouter } from "next/navigation";
@@ -47,33 +47,33 @@ export default function ProfilePage() {
         leaderboardEnabled: true
     });
 
-    useEffect(() => {
-        async function fetchUserData() {
-            if (!user) {
-                router.push("/login");
-                return;
-            }
-
-            try {
-                const data = await getUserById(user.uid);
-                setUserData(data);
-                setFormData({
-                    displayName: data?.displayName || "",
-                    phone: data?.phone || "",
-                    photoURL: data?.photoURL || "",
-                    nickname: data?.nickname || "",
-                    leaderboardEnabled: data?.leaderboardEnabled !== false
-                });
-            } catch (error) {
-                console.error("Error fetching user data:", error);
-                handleError(error, "Profile Data Fetch");
-            } finally {
-                setLoading(false);
-            }
+    const fetchUserData = useCallback(async () => {
+        if (!user) {
+            router.push("/login");
+            return;
         }
 
+        try {
+            const data = await getUserById(user.uid);
+            setUserData(data);
+            setFormData({
+                displayName: data?.displayName || "",
+                phone: data?.phone || "",
+                photoURL: data?.photoURL || "",
+                nickname: data?.nickname || "",
+                leaderboardEnabled: data?.leaderboardEnabled !== false
+            });
+        } catch (error) {
+            console.error("Error fetching user data:", error);
+            handleError(error, "Profile Data Fetch");
+        } finally {
+            setLoading(false);
+        }
+    }, [user, router, handleError]);
+
+    useEffect(() => {
         fetchUserData();
-    }, [user, router]);
+    }, [fetchUserData]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;

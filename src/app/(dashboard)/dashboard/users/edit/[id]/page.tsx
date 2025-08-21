@@ -74,7 +74,7 @@ const userSchema = z.object({
     phone: z.string().optional(),
     username: z.string().optional(),
     role: z.enum(["user", "admin"]),
-    status: z.enum(["inactive", "active", "warned", "banned"]).default("active"),
+    status: z.enum(["inactive", "active", "warned", "banned", "pending_setup"]).default("active"),
 });
 
 type UserFormValues = z.infer<typeof userSchema>;
