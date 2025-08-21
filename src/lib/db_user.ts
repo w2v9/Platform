@@ -582,3 +582,20 @@ export async function deleteUser(userId: string) {
         throw error;
     }
 }
+
+export async function getAllUsers(): Promise<User[]> {
+    try {
+        const usersCollection = collection(db, "users");
+        const usersSnapshot = await getDocs(usersCollection);
+        const usersList: User[] = [];
+
+        usersSnapshot.forEach((doc) => {
+            usersList.push(doc.data() as User);
+        });
+
+        return usersList;
+    } catch (error) {
+        console.error("Error fetching users:", error);
+        throw error;
+    }
+}
