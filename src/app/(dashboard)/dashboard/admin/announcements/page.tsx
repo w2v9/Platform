@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
-import { Plus, Edit, Trash2, Eye, EyeOff, Calendar, AlertTriangle, Info, CheckCircle } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, EyeOff, AlertTriangle, Info, CheckCircle } from 'lucide-react';
 import { Announcement } from '@/data/announcement';
 import { createAnnouncement, getAllAnnouncements, updateAnnouncement, deleteAnnouncement } from '@/lib/db_announcement';
 import { useAuth } from '@/lib/context/authContext';
@@ -29,7 +29,6 @@ export default function AnnouncementsPage() {
     const [description, setDescription] = useState('');
     const [priority, setPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>('medium');
     const [isActive, setIsActive] = useState(true);
-    const [expiresAt, setExpiresAt] = useState('');
 
     useEffect(() => {
         fetchAnnouncements();
@@ -53,7 +52,6 @@ export default function AnnouncementsPage() {
         setDescription('');
         setPriority('medium');
         setIsActive(true);
-        setExpiresAt('');
         setEditingAnnouncement(null);
     };
 
@@ -70,7 +68,6 @@ export default function AnnouncementsPage() {
                 priority,
                 isActive,
                 createdBy: user?.uid || 'unknown',
-                expiresAt: expiresAt ? new Date(expiresAt).toISOString() : undefined,
             };
 
             await createAnnouncement(announcementData);
@@ -96,7 +93,6 @@ export default function AnnouncementsPage() {
                 description: description.trim(),
                 priority,
                 isActive,
-                expiresAt: expiresAt ? new Date(expiresAt).toISOString() : undefined,
             };
 
             await updateAnnouncement(editingAnnouncement.id, updates);
@@ -131,7 +127,6 @@ export default function AnnouncementsPage() {
         setDescription(announcement.description);
         setPriority(announcement.priority);
         setIsActive(announcement.isActive);
-        setExpiresAt(announcement.expiresAt ? new Date(announcement.expiresAt).toISOString().slice(0, 16) : '');
         setIsEditDialogOpen(true);
     };
 
@@ -228,15 +223,6 @@ export default function AnnouncementsPage() {
                                 />
                                 <Label htmlFor="isActive">Active</Label>
                             </div>
-                            <div>
-                                <Label htmlFor="expiresAt">Expires At (Optional)</Label>
-                                <Input
-                                    id="expiresAt"
-                                    type="datetime-local"
-                                    value={expiresAt}
-                                    onChange={(e) => setExpiresAt(e.target.value)}
-                                />
-                            </div>
                             <div className="flex justify-end space-x-2">
                                 <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                                     Cancel
@@ -294,12 +280,6 @@ export default function AnnouncementsPage() {
                                         </div>
                                         <CardDescription>
                                             Created on {formatDate(announcement.createdAt)}
-                                            {announcement.expiresAt && (
-                                                <span className="ml-4">
-                                                    <Calendar className="h-3 w-3 inline mr-1" />
-                                                    Expires: {formatDate(announcement.expiresAt)}
-                                                </span>
-                                            )}
                                         </CardDescription>
                                     </div>
                                     <div className="flex gap-2">
@@ -381,15 +361,6 @@ export default function AnnouncementsPage() {
                                 onCheckedChange={setIsActive}
                             />
                             <Label htmlFor="edit-isActive">Active</Label>
-                        </div>
-                        <div>
-                            <Label htmlFor="edit-expiresAt">Expires At (Optional)</Label>
-                            <Input
-                                id="edit-expiresAt"
-                                type="datetime-local"
-                                value={expiresAt}
-                                onChange={(e) => setExpiresAt(e.target.value)}
-                            />
                         </div>
                         <div className="flex justify-end space-x-2">
                             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
