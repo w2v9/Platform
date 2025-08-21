@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { registerUser, User } from "@/lib/db_user";
+import { createUserByAdmin, User } from "@/lib/db_user";
 import generatePassword from "@/lib/utils/pass_gen";
 import { Eye, EyeOff, Wand2 } from "lucide-react";
 import { z } from "zod";
@@ -108,7 +108,7 @@ export default function CreateUserPage() {
                 quizResults: [],
             }
 
-            await registerUser(
+            await createUserByAdmin(
                 userData,
                 data.password,
             );
@@ -131,7 +131,7 @@ export default function CreateUserPage() {
                 })
             }
 
-            toast.success("User created successfully!");
+            toast.success("User created successfully! The user will need to set up their Firebase Auth account using their email.");
             router.push("/dashboard/users");
         } catch (error) {
             console.error("Error creating user:", error);

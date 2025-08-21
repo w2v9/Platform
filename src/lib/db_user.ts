@@ -67,6 +67,8 @@ export type Metadata = {
         sessionId: string;
         endedAt?: string;
     }>;
+    tempPassword?: string;
+    setupRequired?: boolean;
 };
 
 export type QuizReport = Array<{
@@ -96,7 +98,7 @@ export type User = {
     nickname?: string;
     leaderboardEnabled?: boolean;
     role: "user" | "admin";
-    status?: "inactive" | "active" | "warned" | "banned";
+    status?: "inactive" | "active" | "warned" | "banned" | "pending_setup";
     metadata: Metadata
     quizResults: QuizReport;
 };
@@ -104,7 +106,6 @@ export type User = {
 
 export async function registerUser(data: User, password: string) {
     try {
-
         const userCredential = await createUserWithEmailAndPassword(auth, data.email, password);
         await sendPasswordResetEmail(auth, data.email);
 
@@ -145,6 +146,42 @@ export async function registerUser(data: User, password: string) {
     }
 }
 
+// New function for admin user creation
+export async function createUserByAdmin(data: User, password: string) {
+    try {
+        // Generate a unique ID for the user
+        const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        
+        const userData: User = {
+            ...data,
+            id: userId,
+            status: "pending_setup", // New status for users created by admin
+            nickname: "",
+            leaderboardEnabled: false,
+            metadata: {
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                sessions: [],
+                tempPassword: password, // Store temporary password
+                setupRequired: true
+            },
+            quizResults: []
+        };
+
+        // Create the user document in Firestore
+        await setDoc(doc(db, "users", userId), userData);
+
+        // Note: The user will need to set up their own Firebase Auth account
+        // They can do this by going to the registration page and using their email
+        // The system will recognize their email and link it to the existing document
+
+        return userData;
+    } catch (error) {
+        console.error("Error creating user by admin:", error);
+        throw error;
+    }
+}
+
 export async function loginUser(email: string, password: string) {
     try {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -154,21 +191,49 @@ export async function loginUser(email: string, password: string) {
         let userDoc = await getDoc(userRef);
 
         if (!userDoc.exists()) {
-            const userData: User = {
-                id: user.uid,
-                displayName: user.displayName || "",
-                email: user.email || "",
-                role: "user",
-                status: "inactive",
-                nickname: "",
-                leaderboardEnabled: false,
-                metadata: {
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString(),
-                },
-                quizResults: []
-            };
-            await setDoc(doc(db, "users", user.uid), userData);
+            // Check if there's an existing user document with this email (created by admin)
+            const usersRef = collection(db, "users");
+            const q = query(usersRef, where("email", "==", user.email));
+            const querySnapshot = await getDocs(q);
+            
+            if (!querySnapshot.empty) {
+                // User document exists but with different ID (created by admin)
+                const existingUserDoc = querySnapshot.docs[0];
+                const existingUserData = existingUserDoc.data() as User;
+                
+                // Update the existing document with the Firebase Auth UID
+                await setDoc(doc(db, "users", user.uid), {
+                    ...existingUserData,
+                    id: user.uid,
+                    status: "inactive", // Change from pending_setup to inactive
+                    metadata: {
+                        ...existingUserData.metadata,
+                        updatedAt: new Date().toISOString(),
+                        setupRequired: false,
+                        tempPassword: undefined // Remove temp password
+                    }
+                });
+                
+                // Delete the old document
+                await deleteDoc(existingUserDoc.ref);
+            } else {
+                // Create new user document
+                const userData: User = {
+                    id: user.uid,
+                    displayName: user.displayName || "",
+                    email: user.email || "",
+                    role: "user",
+                    status: "inactive",
+                    nickname: "",
+                    leaderboardEnabled: false,
+                    metadata: {
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString(),
+                    },
+                    quizResults: []
+                };
+                await setDoc(doc(db, "users", user.uid), userData);
+            }
         }
 
         userDoc = await getDoc(userRef);
