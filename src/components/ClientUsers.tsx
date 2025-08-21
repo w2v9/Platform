@@ -25,6 +25,7 @@ import { collection, getDocs, updateDoc, doc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { ColumnDef, SortingState, ColumnFiltersState, VisibilityState } from "@tanstack/react-table";
 import { User } from "@/lib/db_user";
+import { getAllUsers } from "@/lib/db_user";
 import { ArrowUpDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -48,6 +49,21 @@ export function ClientUsers({ initialUsers }: ClientUsersProps) {
     const [rowSelection, setRowSelection] = useState({});
     const [banDialogOpen, setBanDialogOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
+
+    // Fetch users data on client side
+    useEffect(() => {
+        const fetchUsers = async () => {
+            try {
+                const usersData = await getAllUsers();
+                setUsers(usersData);
+            } catch (error) {
+                console.error('Error fetching users:', error);
+                toast.error('Failed to load users');
+            }
+        };
+
+        fetchUsers();
+    }, []);
 
     const actionCards = [
         {

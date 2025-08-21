@@ -644,7 +644,7 @@ export default function QuizUI({ quizData }: { quizData: Quiz }) {
                 )
                 }            {
                     currentQuestionIndex === quizData.questions.length && (
-                        <div className={`quiz-page-transition ${isAnimating ? 'pointer-events-none' : ''}`} style={{ paddingBottom: '80px' }}>
+                        <div className={`quiz-page-transition ${isAnimating ? 'pointer-events-none' : ''}`}>
                             <div className={`w-full h-full ${isAnimating ? 'quiz-animate-fade-in' : ''}`}>
                                 <ScrollArea className="h-full w-full p-4 overflow-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
                                     <div>
