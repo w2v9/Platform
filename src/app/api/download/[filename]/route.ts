@@ -43,6 +43,17 @@ export async function POST(
             );
         }
 
+        // Check file size (limit to 50MB to prevent memory issues)
+        const stats = fs.statSync(filePath);
+        const fileSizeInMB = stats.size / (1024 * 1024);
+        
+        if (fileSizeInMB > 50) {
+            return NextResponse.json(
+                { error: 'File too large to process (max 50MB)' },
+                { status: 413 }
+            );
+        }
+
         // Read the original PDF file
         const originalPdfBytes = fs.readFileSync(filePath);
 
@@ -147,9 +158,32 @@ export async function POST(
 
     } catch (error) {
         console.error('Error processing PDF download:', error);
+        
+        // Provide more specific error messages
+        let errorMessage = 'Internal server error';
+        let statusCode = 500;
+        
+        if (error instanceof Error) {
+            if (error.message.includes('ENOENT')) {
+                errorMessage = 'File not found on server';
+                statusCode = 404;
+            } else if (error.message.includes('EACCES')) {
+                errorMessage = 'Permission denied accessing file';
+                statusCode = 403;
+            } else if (error.message.includes('pdf-lib')) {
+                errorMessage = 'PDF processing error';
+                statusCode = 422;
+            } else {
+                errorMessage = error.message;
+            }
+        }
+        
         return NextResponse.json(
-            { error: 'Internal server error' },
-            { status: 500 }
+            { 
+                error: errorMessage,
+                details: error instanceof Error ? error.message : 'Unknown error'
+            },
+            { status: statusCode }
         );
     }
 }

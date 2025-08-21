@@ -31,6 +31,7 @@ export default function DownloadPage() {
     const [userData, setUserData] = useState<any>(null);
     const [isSamsungBrowser, setIsSamsungBrowser] = useState(false);
     const [showFileLocationHelp, setShowFileLocationHelp] = useState(false);
+    const [downloadProgress, setDownloadProgress] = useState<{[key: string]: string}>({});
 
     useEffect(() => {
         document.title = 'PDF File Download Center - AzoozGAT Platform';
@@ -80,14 +81,17 @@ export default function DownloadPage() {
         fetchUserData();
     }, [user]);
 
-    const handleDownload = async (filename: string) => {
+    const handleDownload = async (filename: string, retryCount = 0) => {
         if (!user || !userData) {
             toast.error('User authentication required');
             return;
         }
 
+        const maxRetries = 2;
+
         try {
             setDownloadingFiles(prev => new Set(prev).add(filename));
+            setDownloadProgress(prev => ({ ...prev, [filename]: 'Processing file...' }));
 
             const response = await fetch(`/api/download/${encodeURIComponent(filename)}`, {
                 method: 'POST',
@@ -102,14 +106,17 @@ export default function DownloadPage() {
             });
 
             if (!response.ok) {
-                throw new Error('Failed to download file');
+                const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
             }
 
             const data = await response.json();
 
             if (!data.success) {
-                throw new Error('Download processing failed');
+                throw new Error(data.error || 'Download processing failed');
             }
+
+            setDownloadProgress(prev => ({ ...prev, [filename]: 'Creating download...' }));
 
             // Convert base64 to blob and download
             const pdfBytes = Uint8Array.from(atob(data.pdf), c => c.charCodeAt(0));
@@ -138,12 +145,49 @@ export default function DownloadPage() {
             }
         } catch (err) {
             console.error('Download error:', err);
-            toast.error(`Failed to download ${filename}`);
+            
+            // Provide more specific error messages
+            let errorMessage = `Failed to download ${filename}`;
+            
+            if (err instanceof Error) {
+                if (err.message.includes('Failed to fetch')) {
+                    errorMessage = 'Network error. Please check your connection and try again.';
+                } else if (err.message.includes('404')) {
+                    errorMessage = 'File not found. Please contact support.';
+                } else if (err.message.includes('500')) {
+                    errorMessage = 'Server error. Please try again later.';
+                } else if (err.message.includes('Failed to download file')) {
+                    errorMessage = 'Download processing failed. Please try again.';
+                } else if (err.message.includes('Download processing failed')) {
+                    errorMessage = 'File processing failed. Please try again.';
+                } else {
+                    errorMessage = `Download failed: ${err.message}`;
+                }
+            }
+            
+            // Retry logic for network errors
+            if (retryCount < maxRetries && errorMessage.includes('Network error')) {
+                console.log(`Retrying download (attempt ${retryCount + 1}/${maxRetries})`);
+                toast.info(`Retrying download... (${retryCount + 1}/${maxRetries})`);
+                
+                // Wait 2 seconds before retrying
+                setTimeout(() => {
+                    handleDownload(filename, retryCount + 1);
+                }, 2000);
+                return;
+            }
+            
+            toast.error(errorMessage);
         } finally {
             setDownloadingFiles(prev => {
                 const newSet = new Set(prev);
                 newSet.delete(filename);
                 return newSet;
+            });
+            setDownloadProgress(prev => {
+                const newProgress = { ...prev };
+                delete newProgress[filename];
+                return newProgress;
             });
         }
     };
@@ -390,7 +434,7 @@ export default function DownloadPage() {
                                             {downloadingFiles.has(file.name) ? (
                                                 <>
                                                     <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                                                    Watermarking & Downloading...
+                                                    {downloadProgress[file.name] || 'Processing...'}
                                                 </>
                                             ) : (
                                                 <>
