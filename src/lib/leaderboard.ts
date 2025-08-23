@@ -100,27 +100,19 @@ import {
       // Calculate the start date based on the time filter
       const startDate = getStartDateForTimeFilter(timeFilter);
   
-      // Build the query based on the time filter
+      // Build the query based on the time filter - ALL users should see ALL users in leaderboard
       let reportsQuery;
-      if (isAdmin) {
+      if (startDate && timeFilter !== TimeFilter.ALL_TIME) {
         reportsQuery = query(
           reportsRef,
-          orderBy("dateTaken", "desc"),
+          where("dateTaken", ">=", startDate),
           limit(500)
         );
       } else {
-        if (startDate && timeFilter !== TimeFilter.ALL_TIME) {
-          reportsQuery = query(
-            reportsRef,
-            where("userId", "==", currentUser.uid),
-            where("dateTaken", ">=", startDate)
-          );
-        } else {
-          reportsQuery = query(
-            reportsRef,
-            where("userId", "==", currentUser.uid)
-          );
-        }
+        reportsQuery = query(
+          reportsRef,
+          limit(500)
+        );
       }
   
       let reportsSnapshot;
@@ -129,15 +121,15 @@ import {
         reportsSnapshot = await getDocs(reportsQuery);
       } catch (err) {
         console.error(
-          "Error fetching reports, falling back to user-specific reports:",
+          "Error fetching reports, falling back to limited reports:",
           err
         );
-        // If getting all reports fails, try getting only the current user's reports
-        const userReportsQuery = query(
+        // If getting all reports fails, try getting limited reports
+        const fallbackQuery = query(
           collection(db, "reports"),
-          where("userId", "==", currentUser.uid)
+          limit(100)
         );
-        reportsSnapshot = await getDocs(userReportsQuery);
+        reportsSnapshot = await getDocs(fallbackQuery);
       }
   
       // Group reports by userId
