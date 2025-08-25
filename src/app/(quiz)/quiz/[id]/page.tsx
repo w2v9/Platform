@@ -7,6 +7,8 @@ import { getQuizById } from "@/lib/db_quiz";
 import { toast } from "sonner";
 import { Loader } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { QuizBrowserWarning } from "@/components/BrowserCompatibility";
+import { detectBrowser } from "@/lib/utils/browserDetection";
 
 function convertLegacyQuizFormat(quiz: any): Quiz {
     if (!quiz) {
@@ -32,7 +34,7 @@ function convertLegacyQuizFormat(quiz: any): Quiz {
             const correctIds = correctOptions.map((opt: any) => opt.id).filter(Boolean);
 
             const optionSet = {
-                id: crypto.randomUUID(),
+                id: (crypto.randomUUID && crypto.randomUUID()) || `legacy_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
                 options: question.options.filter(Boolean), // Remove any null/undefined options
                 answer: correctIds
             };
@@ -297,13 +299,41 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
 
     if (error) {
         return (
-            <div className="fixed inset-0 flex flex-col items-center justify-center">
-                <div className="flex flex-col items-center space-y-4 text-center">
-                    <div className="text-red-500 text-2xl mb-4">
-                        Error
+            <div className="fixed inset-0 flex flex-col items-center justify-center p-4">
+                <div className="flex flex-col items-center space-y-6 text-center max-w-md">
+                    <div className="text-red-500 text-3xl mb-4">
+                        ⚠️ Quiz Error
                     </div>
-                    <div className="text-lg">
+                    <div className="text-lg text-gray-700 dark:text-gray-300">
                         {error}
+                    </div>
+                    
+                    {/* Browser-specific guidance */}
+                    <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4 text-left">
+                        <h3 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">
+                            💡 Quick Fix
+                        </h3>
+                        <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
+                            <li>• <strong>If using Telegram:</strong> Tap the Safari icon (🌐) to open in Safari</li>
+                            <li>• <strong>If using WhatsApp/Facebook:</strong> Open in Safari or Chrome</li>
+                            <li>• <strong>Refresh the page</strong> after switching browsers</li>
+                        </ul>
+                    </div>
+                    
+                    <div className="flex gap-3">
+                        <Button 
+                            onClick={() => window.location.reload()} 
+                            variant="default"
+                            className="px-6"
+                        >
+                            Refresh Page
+                        </Button>
+                        <Button 
+                            onClick={() => window.history.back()} 
+                            variant="outline"
+                        >
+                            Go Back
+                        </Button>
                     </div>
                 </div>
             </div>
@@ -326,16 +356,19 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
     }
 
     return (
-        <div
-            className="flex flex-col gap-4 h-full items-center justify-center"
-            onCopy={(e) => e.preventDefault()}
-            onPaste={(e) => e.preventDefault()}
-            onCut={(e) => e.preventDefault()}
-        >
-            <ErrorBoundary fallback={<QuizErrorFallback />}>
-                <QuizUI quizData={quizData} />
-            </ErrorBoundary>
-        </div>
+        <>
+            <QuizBrowserWarning />
+            <div
+                className="flex flex-col gap-4 h-full items-center justify-center"
+                onCopy={(e) => e.preventDefault()}
+                onPaste={(e) => e.preventDefault()}
+                onCut={(e) => e.preventDefault()}
+            >
+                <ErrorBoundary fallback={<QuizErrorFallback />}>
+                    <QuizUI quizData={quizData} />
+                </ErrorBoundary>
+            </div>
+        </>
     );
 }
 
@@ -370,19 +403,48 @@ class ErrorBoundary extends React.Component<
 // Error Fallback Component
 function QuizErrorFallback() {
     return (
-        <div className="flex flex-col items-center justify-center space-y-4 text-center p-8">
-            <div className="text-red-500 text-2xl mb-4">
-                Quiz Error
+        <div className="fixed inset-0 flex flex-col items-center justify-center p-4 bg-white dark:bg-gray-900">
+            <div className="flex flex-col items-center space-y-6 text-center max-w-md">
+                <div className="text-red-500 text-3xl mb-4">
+                    🚨 Quiz Component Error
+                </div>
+                <div className="text-lg text-gray-700 dark:text-gray-300">
+                    The quiz component encountered an error. This often happens with in-app browsers.
+                </div>
+                
+                {/* Browser-specific guidance */}
+                <div className="bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800 rounded-lg p-4 text-left">
+                    <h3 className="font-semibold text-orange-800 dark:text-orange-200 mb-2">
+                        🔧 Solution Steps
+                    </h3>
+                    <ol className="text-sm text-orange-700 dark:text-orange-300 space-y-2">
+                        <li>1. <strong>Switch to Safari:</strong> Tap the Safari icon (🌐) in your app</li>
+                        <li>2. <strong>Copy the link:</strong> Long-press the quiz link and copy</li>
+                        <li>3. <strong>Paste in Safari:</strong> Open Safari and paste the link</li>
+                        <li>4. <strong>Refresh:</strong> If needed, refresh the page in Safari</li>
+                    </ol>
+                </div>
+                
+                <div className="flex gap-3">
+                    <Button 
+                        onClick={() => window.location.reload()} 
+                        variant="default"
+                        className="px-6"
+                    >
+                        Try Refresh
+                    </Button>
+                    <Button 
+                        onClick={() => window.history.back()} 
+                        variant="outline"
+                    >
+                        Go Back
+                    </Button>
+                </div>
+                
+                <div className="text-xs text-gray-500 dark:text-gray-400">
+                    If the problem persists, please use Safari or Chrome instead of in-app browsers.
+                </div>
             </div>
-            <div className="text-lg">
-                An error occurred while loading the quiz.
-            </div>
-            <Button 
-                onClick={() => window.location.reload()} 
-                variant="outline"
-            >
-                Refresh Page
-            </Button>
         </div>
     );
 }

@@ -27,6 +27,7 @@ import { SidebarItem } from "@/components/app-sidebar";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { auth } from "@/lib/config/firebase-config";
 import AnnouncementBanner from "@/components/AnnouncementBanner";
+import { BrowserCompatibility } from "@/components/BrowserCompatibility";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -245,6 +246,7 @@ function RouteProtection({ children }: { children: React.ReactNode }) {
       <Toaster />
       <main className="w-full flex-1 overflow-auto bg-background">
         <AnnouncementBanner className="p-4" />
+        <BrowserCompatibility />
         {children}
       </main>
     </SidebarProvider>
