@@ -76,27 +76,34 @@ export default function LoginPage() {
                 }
             })
             .catch((error) => {
-                // Check if it's a Firebase Auth error that we can handle gracefully
-                if (error.code && ['auth/user-not-found', 'auth/wrong-password', 'auth/invalid-email', 'auth/too-many-requests'].includes(error.code)) {
+                // Handle all authentication errors with specific messages
+                if (error.code && ['auth/user-not-found', 'auth/wrong-password', 'auth/invalid-email', 'auth/too-many-requests', 'auth/user-disabled', 'auth/account-exists-with-different-credential'].includes(error.code)) {
                     switch (error.code) {
                         case 'auth/user-not-found':
-                            toast.error('No user found with this email.')
+                            toast.error('Invalid credentials. Make sure your email and password are correct.');
                             break;
                         case 'auth/wrong-password':
-                            toast.error('Incorrect password. Please try again.')
+                            toast.error('Invalid credentials. Make sure your email and password are correct.');
                             break;
                         case 'auth/invalid-email':
-                            toast.error('Invalid email address format.')
+                            toast.error('Invalid email address format.');
                             break;
                         case 'auth/too-many-requests':
-                            toast.error('Too many requests. Please try again later.')
+                            toast.error('Too many failed attempts. Please try again later.');
+                            break;
+                        case 'auth/user-disabled':
+                            toast.error('This account has been disabled. Please contact support.');
+                            break;
+                        case 'auth/account-exists-with-different-credential':
+                            toast.error('An account with this email already exists with different credentials.');
                             break;
                         default:
-                            toast.error("Sign-in error: " + error.message);
+                            toast.error('Invalid credentials. Make sure your email and password are correct.');
                     }
                 } else {
-                    // Use the comprehensive error handler for other errors
-                    handleError(error, "Login Process");
+                    // For any other errors, show a generic but helpful message
+                    console.error('Login error:', error);
+                    toast.error('Invalid credentials. Make sure your email and password are correct.');
                 }
             })
             .finally(() => {
