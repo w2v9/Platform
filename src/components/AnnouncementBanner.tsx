@@ -6,6 +6,7 @@ import { X, AlertTriangle, Info, CheckCircle, Clock } from 'lucide-react';
 import { Announcement } from '@/data/announcement';
 import { getUnreadAnnouncements, markAnnouncementAsRead, dismissAnnouncement } from '@/lib/db_announcement';
 import { useAuth } from '@/lib/context/authContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from 'sonner';
 
 interface AnnouncementBannerProps {
@@ -14,6 +15,7 @@ interface AnnouncementBannerProps {
 
 export default function AnnouncementBanner({ className = '' }: AnnouncementBannerProps) {
     const { user } = useAuth();
+    const isMobile = useIsMobile();
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [loading, setLoading] = useState(true);
@@ -138,25 +140,25 @@ export default function AnnouncementBanner({ className = '' }: AnnouncementBanne
     }
 
     return (
-        <div className={`w-full ${className}`}>
-            <div className="bg-white border border-gray-200 rounded-lg shadow-lg border-l-4 border-l-red-500 p-4">
-                <div className="flex justify-between items-start">
+        <div className={`w-full max-w-full ${className}`}>
+            <div className="bg-white border border-gray-200 rounded-lg shadow-lg border-l-4 border-l-red-500 p-2.5 sm:p-4 overflow-hidden">
+                <div className={`${isMobile ? 'flex flex-col space-y-3' : 'flex justify-between items-start'}`}>
                     {/* LEFT SIDE - CONTENT */}
-                    <div className="flex-1 pr-4">
-                        <div className="flex items-start gap-3">
+                    <div className={`${isMobile ? 'w-full' : 'flex-1 pr-4'}`}>
+                        <div className="flex items-start gap-2 sm:gap-3">
                             <div className="flex-shrink-0 mt-1">
                                 {getPriorityIcon(currentAnnouncement.priority)}
                             </div>
-                            <div className="flex-1">
-                                <div className="flex items-center gap-3 mb-2">
-                                    <h3 className="text-base font-semibold text-gray-900">
+                            <div className="flex-1 min-w-0"> {/* Added min-width to prevent overflow */}
+                                <div className={`${isMobile ? 'flex flex-col gap-1' : 'flex items-center gap-3'} mb-2`}>
+                                    <h3 className="text-base font-semibold text-gray-900 break-words">
                                         {currentAnnouncement.title}
                                     </h3>
-                                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full inline-block w-fit">
                                         {formatDate(currentAnnouncement.createdAt)}
                                     </span>
                                 </div>
-                                <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                                <p className="text-sm text-gray-700 whitespace-pre-wrap break-words">
                                     {currentAnnouncement.description}
                                 </p>
                             </div>
@@ -164,7 +166,7 @@ export default function AnnouncementBanner({ className = '' }: AnnouncementBanne
                     </div>
 
                     {/* RIGHT SIDE - ACTIONS */}
-                    <div className="flex items-center gap-2 flex-shrink-0">
+                    <div className={`${isMobile ? 'flex w-full mt-2' : 'flex items-center gap-2 flex-shrink-0'}`}>
                         {announcements.length > 1 && (
                             <div className="flex items-center gap-1 bg-gray-100 rounded-md px-2 py-1">
                                 <Button
@@ -172,6 +174,7 @@ export default function AnnouncementBanner({ className = '' }: AnnouncementBanne
                                     size="sm"
                                     onClick={handlePrevious}
                                     className="h-6 w-6 p-0 hover:bg-gray-200"
+                                    aria-label="Previous announcement"
                                 >
                                     ‹
                                 </Button>
@@ -183,28 +186,32 @@ export default function AnnouncementBanner({ className = '' }: AnnouncementBanne
                                     size="sm"
                                     onClick={handleNext}
                                     className="h-6 w-6 p-0 hover:bg-gray-200"
+                                    aria-label="Next announcement"
                                 >
                                     ›
                                 </Button>
                             </div>
                         )}
                         
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleMarkAsRead(currentAnnouncement.id)}
-                            className="h-8 px-3 text-xs font-medium hover:bg-green-50 hover:border-green-300"
-                        >
-                            Mark Read
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDismiss(currentAnnouncement.id)}
-                            className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
-                        >
-                            <X className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-2 ml-auto">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleMarkAsRead(currentAnnouncement.id)}
+                                className={`${isMobile ? 'h-8 px-2' : 'h-8 px-3'} text-xs font-medium hover:bg-green-50 hover:border-green-300`}
+                            >
+                                {isMobile ? 'Read' : 'Mark Read'}
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDismiss(currentAnnouncement.id)}
+                                className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
+                                aria-label="Dismiss announcement"
+                            >
+                                <X className="h-4 w-4" />
+                            </Button>
+                        </div>
                     </div>
                 </div>
             </div>

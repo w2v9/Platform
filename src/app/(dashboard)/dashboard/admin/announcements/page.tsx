@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -18,6 +19,7 @@ import { useAuth } from '@/lib/context/authContext';
 
 export default function AnnouncementsPage() {
     const { user } = useAuth();
+    const isMobile = useIsMobile();
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
     const [loading, setLoading] = useState(true);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -162,16 +164,16 @@ export default function AnnouncementsPage() {
 
     return (
         <div className="container mx-auto p-6 space-y-6">
-            <div className="flex justify-between items-center">
+            <div className={`${isMobile ? 'flex flex-col space-y-4' : 'flex justify-between items-center'}`}>
                 <div>
                     <h1 className="text-3xl font-bold">Announcements</h1>
                     <p className="text-muted-foreground">Manage system-wide announcements for all users</p>
                 </div>
                 <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                     <DialogTrigger asChild>
-                        <Button onClick={() => resetForm()}>
+                        <Button onClick={() => resetForm()} className={`${isMobile ? 'w-full' : ''}`}>
                             <Plus className="h-4 w-4 mr-2" />
-                            Create Announcement
+                            {isMobile ? 'Create' : 'Create Announcement'}
                         </Button>
                     </DialogTrigger>
                     <DialogContent className="max-w-2xl">
@@ -258,10 +260,10 @@ export default function AnnouncementsPage() {
                     {announcements.map((announcement) => (
                         <Card key={announcement.id}>
                             <CardHeader>
-                                <div className="flex justify-between items-start">
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <CardTitle className="text-lg">{announcement.title}</CardTitle>
+                                <div className={`flex ${isMobile ? 'flex-col' : 'justify-between'} items-start`}>
+                                    <div className="flex-1 w-full">
+                                        <div className={`flex ${isMobile ? 'flex-wrap' : ''} items-center gap-2 mb-2`}>
+                                            <CardTitle className="text-lg break-words">{announcement.title}</CardTitle>
                                             <Badge className={getPriorityColor(announcement.priority)}>
                                                 {getPriorityIcon(announcement.priority)}
                                                 <span className="ml-1 capitalize">{announcement.priority}</span>
